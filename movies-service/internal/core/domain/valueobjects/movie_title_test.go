@@ -3,6 +3,7 @@ package valueobjects_test
 import (
 	errD "movies-service/internal/core/domain/err-d"
 	"movies-service/internal/core/domain/valueobjects"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,10 +32,6 @@ func TestNewMovieTitle(t *testing.T) {
 	})
 
 	t.Run("Invalid Title: exceeds max length", func(t *testing.T) {
-		longTitle := ""
-		for i := 0; i < 301; i++ {
-			longTitle += "a"
-		}
-		validateMovieTitle(longTitle, true)
+		validateMovieTitle(strings.Repeat("a", 301), true)
 	})
 }

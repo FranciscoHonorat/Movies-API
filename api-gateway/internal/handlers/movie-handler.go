@@ -17,7 +17,7 @@ type MovieHandler struct {
 }
 
 type CreateMovieStruct struct {
-	Title string `json:"title" binding:"required"`
+	Title string `json:"title" binding:"required, max=300"`
 	Year  string `json:"year" binding:"required"`
 }
 
