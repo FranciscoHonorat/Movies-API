@@ -56,5 +56,9 @@ func main() {
 	v1.POST("/movies", movieHandler.CreateMovie)
 	v1.DELETE("/movies/:id", movieHandler.DeleteMovie)
 
-	r.Run(":8080")
+	httpPort := os.Getenv("HTTP_PORT")
+	if httpPort == "" {
+		httpPort = "8080"
+	}
+	r.Run(":" + httpPort)
 }

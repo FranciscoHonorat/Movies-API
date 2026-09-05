@@ -4,6 +4,7 @@ go 1.26.4
 
 require (
 	github.com/FranciscoHonorat/movies/proto v0.0.0-20260812191148-386137be498f
+	github.com/FranciscoHonorat/movies/shared v0.0.0-20260812191148-386137be498f
 	github.com/rabbitmq/amqp091-go v1.13.0
 	github.com/stretchr/testify v1.11.1
 	go.mongodb.org/mongo-driver/v2 v2.8.0

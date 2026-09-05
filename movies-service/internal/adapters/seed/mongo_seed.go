@@ -12,7 +12,7 @@ import (
 type MongoSeed struct {
 	ID    int    `bson:"_id" json:"id"`
 	Title string `bson:"title" json:"title"`
-	Year  int    `bson:"year" json:"year"`
+	Year  string `bson:"year" json:"year"`
 }
 
 func Seed(ctx context.Context, collection *mongo.Collection, filepath string) error {

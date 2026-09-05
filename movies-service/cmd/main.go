@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/FranciscoHonorat/movies/proto"
+	"github.com/FranciscoHonorat/movies/shared"
 	"github.com/rabbitmq/amqp091-go"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -59,20 +60,35 @@ func main() {
 	}
 
 	go rabbitmqConsumer.Consume(func(msg amqp091.Delivery) {
-		// Exemplo fazendo parse do JSON contido na mensagem:
-		var movie entity.MovieEntity
-		if err := json.Unmarshal(msg.Body, &movie); err != nil {
+		var payload shared.MoviePublisherMessage
+		if err := json.Unmarshal(msg.Body, &payload); err != nil {
 			log.Printf("Erro ao desserializar mensagem: %v", err)
 			return
 		}
 
-		_, err := svc.CreateMovie(ctx, &movie)
+		id, err := svc.NextMovieID(ctx)
 		if err != nil {
+			log.Printf("Erro ao gerar ID do filme: %v", err)
+			return
+		}
+
+		movie, err := entity.NewMovieEntity(id, payload.Title, payload.Year)
+		if err != nil {
+			log.Printf("Erro ao validar filme recebido via fila: %v", err)
+			return
+		}
+
+		if _, err := svc.CreateMovie(ctx, movie); err != nil {
 			log.Printf("Erro ao processar filme via consumidor: %v", err)
 		}
 	})
 
-	lis, err := net.Listen("tcp", ":50051")
+	grpcPort := os.Getenv("GRPC_PORT")
+	if grpcPort == "" {
+		grpcPort = "50051"
+	}
+
+	lis, err := net.Listen("tcp", ":"+grpcPort)
 	if err != nil {
 		log.Fatalf("Erro ao abrir porta TCP: %v", err)
 	}
@@ -80,7 +96,7 @@ func main() {
 	grpcSrv := grpc.NewServer()
 	proto.RegisterMovieServiceServer(grpcSrv, grpcserver.NewServer(svc))
 
-	log.Println("Servidor gRPC rodando na porta :50051...")
+	log.Printf("Servidor gRPC rodando na porta :%s...", grpcPort)
 	if err := grpcSrv.Serve(lis); err != nil {
 		log.Fatalf("Erro ao subir servidor gRPC: %v", err)
 	}

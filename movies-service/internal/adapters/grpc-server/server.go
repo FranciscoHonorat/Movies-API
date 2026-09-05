@@ -64,7 +64,12 @@ func (s *Server) ListMovie(ctx context.Context, req *proto.ListMovieRequest) (*p
 }
 
 func (s *Server) CreateMovie(ctx context.Context, req *proto.CreateMovieRequest) (*proto.CreateMovieResponse, error) {
-	movie, err := entity.NewMovieEntity(1, req.Title, req.Year)
+	id, err := s.service.NextMovieID(ctx)
+	if err != nil {
+		return nil, toGRPCError(err)
+	}
+
+	movie, err := entity.NewMovieEntity(id, req.Title, req.Year)
 	if err != nil {
 		return nil, toGRPCError(err)
 	}

@@ -25,7 +25,6 @@ type ListMovieStruct struct {
 	Data  []*proto.Movie `json:"data"`
 	Page  int32          `json:"page"`
 	Limit int32          `json:"limit"`
-	Total int32          `json:"total"`
 }
 
 // NewMovieHandler cria uma nova instância de MovieHandler

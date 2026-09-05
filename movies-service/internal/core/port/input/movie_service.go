@@ -12,4 +12,6 @@ type MovieService interface {
 	CountMovies(ctx context.Context, filters output.Listfilters) (int, error)
 	CreateMovie(ctx context.Context, movie *entity.MovieEntity) (*entity.MovieEntity, error)
 	DeleteMovie(ctx context.Context, id int) error
+	// NextMovieID returns a new, previously unused movie ID.
+	NextMovieID(ctx context.Context) (int, error)
 }

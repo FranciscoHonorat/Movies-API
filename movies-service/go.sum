@@ -1,5 +1,7 @@
 github.com/FranciscoHonorat/movies/proto v0.0.0-20260812191148-386137be498f h1:FS/KZI1LLb9AVQCESpyTctJakJg+PHNfrmrQfzxL7uk=
 github.com/FranciscoHonorat/movies/proto v0.0.0-20260812191148-386137be498f/go.mod h1:Z7WiOBoDcRtYsifRloMXnUD9v+27zTi9eNdiuapdWRw=
+github.com/FranciscoHonorat/movies/shared v0.0.0-20260812191148-386137be498f h1:/lUJHEzMoLg7a6GEOHZY+ap+15nC9oZe48L+V5rYhF8=
+github.com/FranciscoHonorat/movies/shared v0.0.0-20260812191148-386137be498f/go.mod h1:pOCTLRNlECSJ6IuGG/Bz6Q8vh2Ah8iFI0/lE6UMEnag=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

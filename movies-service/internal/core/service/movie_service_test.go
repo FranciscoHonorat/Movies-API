@@ -53,6 +53,11 @@ func (m *MockMovieRepository) DeleteMovie(ctx context.Context, id int) error {
 	return args.Error(0)
 }
 
+func (m *MockMovieRepository) NextID(ctx context.Context) (int, error) {
+	args := m.Called(ctx)
+	return args.Int(0), args.Error(1)
+}
+
 // Helpers de Teste
 func helperNewMovie(t *testing.T, id int, title, year string) *entity.MovieEntity {
 	t.Helper()
@@ -287,6 +292,32 @@ func TestMovieService(t *testing.T) {
 				mockRepo.AssertExpectations(t)
 			})
 		}
+	})
+
+	t.Run("NextMovieID", func(t *testing.T) {
+		t.Run("Happy Path: retorna o próximo ID gerado pelo repositório", func(t *testing.T) {
+			mockRepo := new(MockMovieRepository)
+			mockRepo.On("NextID", mock.Anything).Return(42, nil)
+
+			svc := service.NewMovieService(mockRepo)
+			got, err := svc.NextMovieID(context.Background())
+
+			assert.NoError(t, err)
+			assert.Equal(t, 42, got)
+			mockRepo.AssertExpectations(t)
+		})
+
+		t.Run("Sad Path: erro do repositório é propagado", func(t *testing.T) {
+			mockRepo := new(MockMovieRepository)
+			mockRepo.On("NextID", mock.Anything).Return(0, errors.New("falha ao gerar id"))
+
+			svc := service.NewMovieService(mockRepo)
+			got, err := svc.NextMovieID(context.Background())
+
+			assert.Error(t, err)
+			assert.Equal(t, 0, got)
+			mockRepo.AssertExpectations(t)
+		})
 	})
 
 	t.Run("DeleteMovie", func(t *testing.T) {

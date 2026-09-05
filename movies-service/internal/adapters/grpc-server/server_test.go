@@ -56,6 +56,11 @@ func (m *MockMovieService) DeleteMovie(ctx context.Context, id int) error {
 	return args.Error(0)
 }
 
+func (m *MockMovieService) NextMovieID(ctx context.Context) (int, error) {
+	args := m.Called(ctx)
+	return args.Int(0), args.Error(1)
+}
+
 func createTestMovie(t *testing.T, id int, title, year string) *entity.MovieEntity {
 	t.Helper()
 	movie, err := entity.NewMovieEntity(id, title, year)
@@ -206,6 +211,7 @@ func TestServer(t *testing.T) {
 				name: "Happy Path: Criação bem sucedida",
 				req:  &proto.CreateMovieRequest{Title: "Tenet", Year: "2020"},
 				setupMock: func(m *MockMovieService) {
+					m.On("NextMovieID", mock.Anything).Return(1, nil)
 					m.On("CreateMovie", mock.Anything, mock.AnythingOfType("*entity.MovieEntity")).
 						Return(createdMovie, nil)
 				},
@@ -222,6 +228,7 @@ func TestServer(t *testing.T) {
 				name: "Sad Path: Dados inválidos no serviço",
 				req:  &proto.CreateMovieRequest{Title: "Tenet", Year: "2020"},
 				setupMock: func(m *MockMovieService) {
+					m.On("NextMovieID", mock.Anything).Return(1, nil)
 					m.On("CreateMovie", mock.Anything, mock.AnythingOfType("*entity.MovieEntity")).
 						Return(nil, errD.ErrInvalidMovieData) // Ou outro erro mapeado para InvalidArgument
 				},
@@ -232,8 +239,18 @@ func TestServer(t *testing.T) {
 				name: "Sad Path: Erro no repositório/serviço durante a criação",
 				req:  &proto.CreateMovieRequest{Title: "Dunkirk", Year: "2017"},
 				setupMock: func(m *MockMovieService) {
+					m.On("NextMovieID", mock.Anything).Return(1, nil)
 					m.On("CreateMovie", mock.Anything, mock.AnythingOfType("*entity.MovieEntity")).
 						Return(nil, errors.New("duplicado"))
+				},
+				wantErr:      true,
+				expectedCode: codes.Internal,
+			},
+			{
+				name: "Sad Path: Erro ao gerar o próximo ID",
+				req:  &proto.CreateMovieRequest{Title: "Dunkirk", Year: "2017"},
+				setupMock: func(m *MockMovieService) {
+					m.On("NextMovieID", mock.Anything).Return(0, errors.New("falha ao gerar id"))
 				},
 				wantErr:      true,
 				expectedCode: codes.Internal,

@@ -48,3 +48,7 @@ func (s *MovieService) DeleteMovie(ctx context.Context, id int) error {
 	}
 	return s.repo.DeleteMovie(ctx, id)
 }
+
+func (s *MovieService) NextMovieID(ctx context.Context) (int, error) {
+	return s.repo.NextID(ctx)
+}

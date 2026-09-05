@@ -11,6 +11,8 @@ type MovieRepository interface {
 	CountMovies(ctx context.Context, filters Listfilters) (int, error)
 	CreateMovie(ctx context.Context, movie *entity.MovieEntity) (*entity.MovieEntity, error)
 	DeleteMovie(ctx context.Context, id int) error
+	// NextID returns a new, previously unused movie ID. It is safe for concurrent use.
+	NextID(ctx context.Context) (int, error)
 }
 
 type Listfilters struct {

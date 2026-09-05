@@ -3,6 +3,7 @@ package seed_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -14,7 +15,7 @@ import (
 
 func TestSeed(t *testing.T) {
 	t.Run("Happy path: should seed the collection when it is empty", func(t *testing.T) {
-		client, err := mongo.Connect(options.Client().ApplyURI("mongodb://localhost:27017"))
+		client, err := mongo.Connect(options.Client().ApplyURI("mongodb://localhost:27017").SetServerSelectionTimeout(2 * time.Second))
 		assert.NoError(t, err)
 		defer client.Disconnect(context.Background())
 
@@ -32,11 +33,14 @@ func TestSeed(t *testing.T) {
 	})
 
 	t.Run("Sad path: should not seed the collection when it is not empty", func(t *testing.T) {
-		client, err := mongo.Connect(options.Client().ApplyURI("mongodb://localhost:27017"))
+		client, err := mongo.Connect(options.Client().ApplyURI("mongodb://localhost:27017").SetServerSelectionTimeout(2 * time.Second))
 		assert.NoError(t, err)
 		defer client.Disconnect(context.Background())
 
 		collection := client.Database("testdb").Collection("movies")
+
+		err = collection.Drop(context.Background())
+		assert.NoError(t, err)
 
 		_, err = collection.InsertOne(context.Background(), bson.D{{Key: "title", Value: "Existing Movie"}})
 		assert.NoError(t, err)

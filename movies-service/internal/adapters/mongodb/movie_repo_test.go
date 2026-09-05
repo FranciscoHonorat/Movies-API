@@ -6,6 +6,7 @@ import (
 	"movies-service/internal/core/domain/entity"
 	"movies-service/internal/core/port/output"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +25,7 @@ func TestMovieRepository(t *testing.T) {
 	mongoURI := "mongodb://localhost:27017"
 
 	t.Run("Happy Path: GetMovieByID", func(t *testing.T) {
-		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
+		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI).SetServerSelectionTimeout(2 * time.Second))
 		require.NoError(t, err)
 		defer client.Disconnect(context.Background())
 
@@ -44,7 +45,7 @@ func TestMovieRepository(t *testing.T) {
 	})
 
 	t.Run("Happy Path: ListMovies with filters, pagination and sorting", func(t *testing.T) {
-		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
+		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI).SetServerSelectionTimeout(2 * time.Second))
 		require.NoError(t, err)
 		defer client.Disconnect(context.Background())
 
@@ -77,7 +78,7 @@ func TestMovieRepository(t *testing.T) {
 	})
 
 	t.Run("Sad Path: GetMovieByID with non-existent ID", func(t *testing.T) {
-		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
+		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI).SetServerSelectionTimeout(2 * time.Second))
 		require.NoError(t, err)
 		defer client.Disconnect(context.Background())
 
@@ -90,7 +91,7 @@ func TestMovieRepository(t *testing.T) {
 	})
 
 	t.Run("Sad Path: ListMovies with no matching filters", func(t *testing.T) {
-		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
+		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI).SetServerSelectionTimeout(2 * time.Second))
 		require.NoError(t, err)
 		defer client.Disconnect(context.Background())
 
@@ -107,7 +108,7 @@ func TestMovieRepository(t *testing.T) {
 	})
 
 	t.Run("Sad Path: ListMovies with invalid regex filter", func(t *testing.T) {
-		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
+		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI).SetServerSelectionTimeout(2 * time.Second))
 		require.NoError(t, err)
 		defer client.Disconnect(context.Background())
 
@@ -124,7 +125,7 @@ func TestMovieRepository(t *testing.T) {
 	})
 
 	t.Run("Happy Path: DeleteMovie via repo", func(t *testing.T) {
-		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
+		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI).SetServerSelectionTimeout(2 * time.Second))
 		require.NoError(t, err)
 		defer client.Disconnect(context.Background())
 
@@ -144,7 +145,7 @@ func TestMovieRepository(t *testing.T) {
 	})
 
 	t.Run("Sad Path: DeleteMovie with non-existent ID", func(t *testing.T) {
-		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
+		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI).SetServerSelectionTimeout(2 * time.Second))
 		require.NoError(t, err)
 		defer client.Disconnect(context.Background())
 
@@ -156,7 +157,7 @@ func TestMovieRepository(t *testing.T) {
 	})
 
 	t.Run("Sad Path: Insert movie with duplicate ID", func(t *testing.T) {
-		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
+		client, err := mongo.Connect(options.Client().ApplyURI(mongoURI).SetServerSelectionTimeout(2 * time.Second))
 		require.NoError(t, err)
 		defer client.Disconnect(context.Background())
 
