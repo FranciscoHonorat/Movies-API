@@ -10,7 +10,7 @@ import (
 )
 
 type MongoSeed struct {
-	ID    int    `bson:"_id" json:"id"`
+	ID    int32  `bson:"_id" json:"id"`
 	Title string `bson:"title" json:"title"`
 	Year  string `bson:"year" json:"year"`
 }

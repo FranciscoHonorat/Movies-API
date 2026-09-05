@@ -12,7 +12,7 @@ func TestMovieEntity(t *testing.T) {
 	t.Run("New Movie Entity", func(t *testing.T) {
 		movies := []struct {
 			name       string
-			id         int
+			id         int32
 			title      string
 			year       string
 			MovieError error

@@ -19,7 +19,7 @@ type MockMovieRepository struct {
 	mock.Mock
 }
 
-func (m *MockMovieRepository) GetMovieByID(ctx context.Context, id int) (*entity.MovieEntity, error) {
+func (m *MockMovieRepository) GetMovieByID(ctx context.Context, id int32) (*entity.MovieEntity, error) {
 	args := m.Called(ctx, id)
 	if res := args.Get(0); res != nil {
 		return res.(*entity.MovieEntity), args.Error(1)
@@ -35,9 +35,9 @@ func (m *MockMovieRepository) ListMovies(ctx context.Context, filters output.Lis
 	return nil, args.Error(1)
 }
 
-func (m *MockMovieRepository) CountMovies(ctx context.Context, filters output.Listfilters) (int, error) {
+func (m *MockMovieRepository) CountMovies(ctx context.Context, filters output.Listfilters) (int32, error) {
 	args := m.Called(ctx, filters)
-	return args.Int(0), args.Error(1)
+	return int32(args.Int(0)), args.Error(1)
 }
 
 func (m *MockMovieRepository) CreateMovie(ctx context.Context, movie *entity.MovieEntity) (*entity.MovieEntity, error) {
@@ -48,18 +48,18 @@ func (m *MockMovieRepository) CreateMovie(ctx context.Context, movie *entity.Mov
 	return nil, args.Error(1)
 }
 
-func (m *MockMovieRepository) DeleteMovie(ctx context.Context, id int) error {
+func (m *MockMovieRepository) DeleteMovie(ctx context.Context, id int32) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
 
-func (m *MockMovieRepository) NextID(ctx context.Context) (int, error) {
+func (m *MockMovieRepository) NextID(ctx context.Context) (int32, error) {
 	args := m.Called(ctx)
-	return args.Int(0), args.Error(1)
+	return int32(args.Int(0)), args.Error(1)
 }
 
 // Helpers de Teste
-func helperNewMovie(t *testing.T, id int, title, year string) *entity.MovieEntity {
+func helperNewMovie(t *testing.T, id int32, title, year string) *entity.MovieEntity {
 	t.Helper()
 	movie, err := entity.NewMovieEntity(id, title, year)
 	require.NoError(t, err)
@@ -72,7 +72,7 @@ func TestMovieService(t *testing.T) {
 
 		tests := []struct {
 			name      string
-			id        int
+			id        int32
 			setupMock func(m *MockMovieRepository)
 			want      *entity.MovieEntity
 			wantErr   bool
@@ -81,7 +81,7 @@ func TestMovieService(t *testing.T) {
 				name: "Happy Path: Sucesso ao buscar por ID",
 				id:   1,
 				setupMock: func(m *MockMovieRepository) {
-					m.On("GetMovieByID", mock.Anything, 1).Return(validMovie, nil)
+					m.On("GetMovieByID", mock.Anything, int32(1)).Return(validMovie, nil)
 				},
 				want:    validMovie,
 				wantErr: false,
@@ -97,7 +97,7 @@ func TestMovieService(t *testing.T) {
 				name: "Sad Path: Erro retornado pelo repositório",
 				id:   99,
 				setupMock: func(m *MockMovieRepository) {
-					m.On("GetMovieByID", mock.Anything, 99).Return(nil, errors.New("filme não encontrado"))
+					m.On("GetMovieByID", mock.Anything, int32(99)).Return(nil, errors.New("filme não encontrado"))
 				},
 				want:    nil,
 				wantErr: true,
@@ -194,7 +194,7 @@ func TestMovieService(t *testing.T) {
 			name      string
 			filters   output.Listfilters
 			setupMock func(m *MockMovieRepository)
-			want      int
+			want      int32
 			wantErr   bool
 		}{
 			{
@@ -303,7 +303,7 @@ func TestMovieService(t *testing.T) {
 			got, err := svc.NextMovieID(context.Background())
 
 			assert.NoError(t, err)
-			assert.Equal(t, 42, got)
+			assert.Equal(t, int32(42), got)
 			mockRepo.AssertExpectations(t)
 		})
 
@@ -315,7 +315,7 @@ func TestMovieService(t *testing.T) {
 			got, err := svc.NextMovieID(context.Background())
 
 			assert.Error(t, err)
-			assert.Equal(t, 0, got)
+			assert.Equal(t, int32(0), got)
 			mockRepo.AssertExpectations(t)
 		})
 	})
@@ -323,7 +323,7 @@ func TestMovieService(t *testing.T) {
 	t.Run("DeleteMovie", func(t *testing.T) {
 		tests := []struct {
 			name      string
-			id        int
+			id        int32
 			setupMock func(m *MockMovieRepository)
 			wantErr   bool
 		}{
@@ -331,7 +331,7 @@ func TestMovieService(t *testing.T) {
 				name: "Happy Path: Deleção bem-sucedida",
 				id:   1,
 				setupMock: func(m *MockMovieRepository) {
-					m.On("DeleteMovie", mock.Anything, 1).Return(nil)
+					m.On("DeleteMovie", mock.Anything, int32(1)).Return(nil)
 				},
 				wantErr: false,
 			},
@@ -345,7 +345,7 @@ func TestMovieService(t *testing.T) {
 				name: "Sad Path: Erro no repositório",
 				id:   10,
 				setupMock: func(m *MockMovieRepository) {
-					m.On("DeleteMovie", mock.Anything, 10).Return(errors.New("falha ao deletar"))
+					m.On("DeleteMovie", mock.Anything, int32(10)).Return(errors.New("falha ao deletar"))
 				},
 				wantErr: true,
 			},

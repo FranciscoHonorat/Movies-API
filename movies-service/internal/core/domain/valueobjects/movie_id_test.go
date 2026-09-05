@@ -10,7 +10,7 @@ import (
 )
 
 func TestNewMovieID(t *testing.T) {
-	validateMovieID := func(id int, expectedError bool) {
+	validateMovieID := func(id int32, expectedError bool) {
 		t.Helper()
 		_, err := valueobjects.NewMovieID(id)
 		if expectedError {

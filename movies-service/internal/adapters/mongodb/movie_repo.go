@@ -25,7 +25,7 @@ type Movie struct {
 }
 
 type movieRepository struct {
-	Id    int    `bson:"_id"`
+	Id    int32  `bson:"_id"`
 	Title string `bson:"title"`
 	Year  string `bson:"year"`
 }
@@ -49,7 +49,7 @@ func ToDomain(doc movieRepository) (*entity.MovieEntity, error) {
 	return entity.NewMovieEntity(doc.Id, doc.Title, doc.Year)
 }
 
-func (m *Movie) GetMovieByID(ctx context.Context, id int) (*entity.MovieEntity, error) {
+func (m *Movie) GetMovieByID(ctx context.Context, id int32) (*entity.MovieEntity, error) {
 	filter := bson.M{"_id": id}
 
 	var doc movieRepository
@@ -103,7 +103,7 @@ func (m *Movie) ListMovies(ctx context.Context, filters output.Listfilters, pagi
 	return movies, nil
 }
 
-func (m *Movie) CountMovies(ctx context.Context, filters output.Listfilters) (int, error) {
+func (m *Movie) CountMovies(ctx context.Context, filters output.Listfilters) (int32, error) {
 	filter := bson.M{}
 	if filters.Title != "" {
 		filter["title"] = bson.M{"$regex": filters.Title, "$options": "i"}
@@ -117,7 +117,7 @@ func (m *Movie) CountMovies(ctx context.Context, filters output.Listfilters) (in
 		return 0, err
 	}
 
-	return int(count), nil
+	return int32(count), nil
 }
 
 func (m *Movie) CreateMovie(ctx context.Context, movie *entity.MovieEntity) (*entity.MovieEntity, error) {
@@ -134,7 +134,7 @@ func (m *Movie) CreateMovie(ctx context.Context, movie *entity.MovieEntity) (*en
 	return ToDomain(updatedDoc)
 }
 
-func (m *Movie) DeleteMovie(ctx context.Context, id int) error {
+func (m *Movie) DeleteMovie(ctx context.Context, id int32) error {
 	filter := bson.M{"_id": id}
 
 	result, err := m.collection.DeleteOne(ctx, filter)
@@ -151,7 +151,7 @@ func (m *Movie) DeleteMovie(ctx context.Context, id int) error {
 // NextID hands out a new, previously unused movie ID via an atomic counter
 // document. On first use it seeds the counter from the highest _id already
 // present in the movies collection, so it never collides with seeded data.
-func (m *Movie) NextID(ctx context.Context) (int, error) {
+func (m *Movie) NextID(ctx context.Context) (int32, error) {
 	m.counterOnce.Do(func() {
 		m.counterErr = m.seedCounterFromExistingMovies(ctx)
 	})
@@ -164,7 +164,7 @@ func (m *Movie) NextID(ctx context.Context) (int, error) {
 	opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
 
 	var doc struct {
-		Seq int `bson:"seq"`
+		Seq int32 `bson:"seq"`
 	}
 	if err := m.counters.FindOneAndUpdate(ctx, filter, update, opts).Decode(&doc); err != nil {
 		return 0, err
@@ -176,7 +176,7 @@ func (m *Movie) seedCounterFromExistingMovies(ctx context.Context) error {
 	opts := options.FindOne().SetSort(bson.D{{Key: "_id", Value: -1}})
 
 	var doc struct {
-		ID int `bson:"_id"`
+		ID int32 `bson:"_id"`
 	}
 	err := m.collection.FindOne(ctx, bson.M{}, opts).Decode(&doc)
 	if errors.Is(err, mongo.ErrNoDocuments) {

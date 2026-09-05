@@ -3,17 +3,17 @@ package valueobjects
 import errD "movies-service/internal/core/domain/err-d"
 
 type MovieID struct {
-	id int
+	id int32
 }
 
-func NewMovieID(id int) (*MovieID, error) {
+func NewMovieID(id int32) (*MovieID, error) {
 	if id <= 0 {
 		return nil, errD.ErrIDNotValid
 	}
 	return &MovieID{id: id}, nil
 }
 
-func (m *MovieID) ID() int {
+func (m *MovieID) ID() int32 {
 	return m.id
 }
 

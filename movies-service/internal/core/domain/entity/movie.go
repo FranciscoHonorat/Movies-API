@@ -12,7 +12,7 @@ type MovieEntity struct {
 	Year  valueobjects.MovieYear
 }
 
-func NewMovieEntity(id int, title, year string) (*MovieEntity, error) {
+func NewMovieEntity(id int32, title, year string) (*MovieEntity, error) {
 	movieID, err := valueobjects.NewMovieID(id)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (m *MovieEntity) Validate() error {
 	return nil
 }
 
-func (m *MovieEntity) GetID() int {
+func (m *MovieEntity) GetID() int32 {
 	return m.ID.ID()
 }
 

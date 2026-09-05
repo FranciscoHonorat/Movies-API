@@ -21,7 +21,7 @@ func NewServer(service input.MovieService) *Server {
 }
 
 func (s *Server) GetMovieById(ctx context.Context, req *proto.GetMovieRequest) (*proto.GetMovieResponse, error) {
-	movie, err := s.service.GetMovieByID(ctx, int(req.Id))
+	movie, err := s.service.GetMovieByID(ctx, int32(req.Id))
 	if err != nil {
 		return nil, toGRPCError(err)
 	}
@@ -89,7 +89,7 @@ func (s *Server) CreateMovie(ctx context.Context, req *proto.CreateMovieRequest)
 }
 
 func (s *Server) DeleteMovie(ctx context.Context, req *proto.DeleteMovieRequest) (*proto.DeleteMovieResponse, error) {
-	err := s.service.DeleteMovie(ctx, int(req.Id))
+	err := s.service.DeleteMovie(ctx, int32(req.Id))
 	if err != nil {
 		return nil, toGRPCError(err)
 	}

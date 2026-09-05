@@ -1,0 +1,31 @@
+name: Docker CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Criar .env temporario para o build
+      run: |
+        cat <<EOF > .env
+        API_GATEWAY_PORT=8080
+        MOVIES_GRPC_PORT=50051
+        MONGO_PORT=27017
+        MONGO_ROOT_USER=root
+        MONGO_ROOT_PASSWORD=secret
+        MONGO_DB_NAME=movies_db
+        RABBITMQ_USER=guest
+        RABBITMQ_PASSWORD=guest
+        RABBITMQ_PORT=5672
+        RABBITMQ_MANAGEMENT_PORT=15672
+        EOF
+
+    - name: Build com Docker Compose
+      run: docker compose build
