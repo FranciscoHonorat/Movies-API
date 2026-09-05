@@ -1,15 +1,22 @@
 package valueobjects
 
-import errD "movies-service/internal/core/domain/err-d"
+import (
+	errD "movies-service/internal/core/domain/err-d"
+	"strings"
+)
+
+const maxTitleLength = 300
 
 type MovieTitle struct {
 	Title string
 }
 
 func NewMovieTitle(title string) (*MovieTitle, error) {
-	if title == "" {
+	trimmed := strings.TrimSpace(title)
+	if trimmed == "" || len(trimmed) > maxTitleLength {
 		return nil, errD.ErrTitleNotValid
 	}
+
 	return &MovieTitle{Title: title}, nil
 }
 

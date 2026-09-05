@@ -1,15 +1,28 @@
 package valueobjects
 
-import errD "movies-service/internal/core/domain/err-d"
+import (
+	errD "movies-service/internal/core/domain/err-d"
+	"strconv"
+	"time"
+)
+
+const minYear = 1888
 
 type MovieYear struct {
 	Year string
 }
 
 func NewMovieYear(year string) (*MovieYear, error) {
-	if year == "" {
+	yearInt, err := strconv.Atoi(year)
+	if err != nil {
 		return nil, errD.ErrYearNotValid
 	}
+
+	maxYear := time.Now().Year() + 2
+	if yearInt < minYear || yearInt > maxYear {
+		return nil, errD.ErrYearNotValid
+	}
+
 	return &MovieYear{Year: year}, nil
 }
 

@@ -25,4 +25,16 @@ func TestNewMovieTitle(t *testing.T) {
 	t.Run("Invalid Title", func(t *testing.T) {
 		validateMovieTitle("", true)
 	})
+
+	t.Run("Invalid Title: whitespace only", func(t *testing.T) {
+		validateMovieTitle("   ", true)
+	})
+
+	t.Run("Invalid Title: exceeds max length", func(t *testing.T) {
+		longTitle := ""
+		for i := 0; i < 301; i++ {
+			longTitle += "a"
+		}
+		validateMovieTitle(longTitle, true)
+	})
 }

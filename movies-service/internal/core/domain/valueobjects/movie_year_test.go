@@ -19,10 +19,23 @@ func TestNewMovieYear(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
-	t.Run("Valid Year", func(t *testing.T) {
-		validateMovieYear("Inception", false)
+
+	t.Run("Valid Year: dentro da faixa", func(t *testing.T) {
+		validateMovieYear("2010", false)
 	})
-	t.Run("Invalid Year", func(t *testing.T) {
+	t.Run("Valid Year: limite inferior (1888)", func(t *testing.T) {
+		validateMovieYear("1888", false)
+	})
+	t.Run("Invalid Year: vazio", func(t *testing.T) {
 		validateMovieYear("", true)
+	})
+	t.Run("Invalid Year: não numérico", func(t *testing.T) {
+		validateMovieYear("Inception", true)
+	})
+	t.Run("Invalid Year: anterior a 1888", func(t *testing.T) {
+		validateMovieYear("1800", true)
+	})
+	t.Run("Invalid Year: longe demais no futuro", func(t *testing.T) {
+		validateMovieYear("3000", true)
 	})
 }
