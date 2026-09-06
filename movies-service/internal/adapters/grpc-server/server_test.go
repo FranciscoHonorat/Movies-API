@@ -61,6 +61,24 @@ func (m *MockMovieService) NextMovieID(ctx context.Context) (int32, error) {
 	return int32(args.Int(0)), args.Error(1)
 }
 
+func (m *MockMovieService) RecordJobCompleted(ctx context.Context, correlationID string, movieID int32) error {
+	args := m.Called(ctx, correlationID, movieID)
+	return args.Error(0)
+}
+
+func (m *MockMovieService) RecordJobFailed(ctx context.Context, correlationID string, errMsg string) error {
+	args := m.Called(ctx, correlationID, errMsg)
+	return args.Error(0)
+}
+
+func (m *MockMovieService) GetJobStatus(ctx context.Context, correlationID string) (*output.MovieJobStatus, error) {
+	args := m.Called(ctx, correlationID)
+	if res := args.Get(0); res != nil {
+		return res.(*output.MovieJobStatus), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 func createTestMovie(t *testing.T, id int32, title, year string) *entity.MovieEntity {
 	t.Helper()
 	movie, err := entity.NewMovieEntity(id, title, year)
@@ -120,7 +138,7 @@ func TestServer(t *testing.T) {
 				tt.setupMock(mockService)
 
 				server := grpcserver.NewServer(mockService)
-				resp, err := server.GetMovieById(context.Background(), tt.req)
+				resp, err := server.GetMovie(context.Background(), tt.req)
 
 				if tt.wantErr {
 					assertGRPCError(t, err, tt.expectedCode)
@@ -313,6 +331,70 @@ func TestServer(t *testing.T) {
 
 				server := grpcserver.NewServer(mockService)
 				resp, err := server.DeleteMovie(context.Background(), tt.req)
+
+				if tt.wantErr {
+					assertGRPCError(t, err, tt.expectedCode)
+					assert.Nil(t, resp)
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, tt.expectedResp, resp)
+				}
+				mockService.AssertExpectations(t)
+			})
+		}
+	})
+
+	t.Run("GetMovieStatus", func(t *testing.T) {
+		tests := []struct {
+			name         string
+			req          *proto.GetMovieStatusRequest
+			setupMock    func(m *MockMovieService)
+			expectedResp *proto.GetMovieStatusResponse
+			expectedCode codes.Code
+			wantErr      bool
+		}{
+			{
+				name: "Happy Path: job concluído devolve o filme",
+				req:  &proto.GetMovieStatusRequest{CorrelationId: "corr-done"},
+				setupMock: func(m *MockMovieService) {
+					m.On("GetJobStatus", mock.Anything, "corr-done").
+						Return(&output.MovieJobStatus{Status: "completed", Movie: createTestMovie(t, 1, "Tenet", "2020")}, nil)
+				},
+				expectedResp: &proto.GetMovieStatusResponse{
+					Status: "completed",
+					Movie:  &proto.Movie{Id: 1, Title: "Tenet", Year: "2020"},
+				},
+				wantErr: false,
+			},
+			{
+				name: "Happy Path: job ainda pendente",
+				req:  &proto.GetMovieStatusRequest{CorrelationId: "corr-pending"},
+				setupMock: func(m *MockMovieService) {
+					m.On("GetJobStatus", mock.Anything, "corr-pending").
+						Return(&output.MovieJobStatus{Status: "pending"}, nil)
+				},
+				expectedResp: &proto.GetMovieStatusResponse{Status: "pending"},
+				wantErr:      false,
+			},
+			{
+				name: "Sad Path: erro ao consultar o status",
+				req:  &proto.GetMovieStatusRequest{CorrelationId: "corr-err"},
+				setupMock: func(m *MockMovieService) {
+					m.On("GetJobStatus", mock.Anything, "corr-err").
+						Return(nil, errors.New("erro de conexao no banco"))
+				},
+				wantErr:      true,
+				expectedCode: codes.Internal,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mockService := new(MockMovieService)
+				tt.setupMock(mockService)
+
+				server := grpcserver.NewServer(mockService)
+				resp, err := server.GetMovieStatus(context.Background(), tt.req)
 
 				if tt.wantErr {
 					assertGRPCError(t, err, tt.expectedCode)

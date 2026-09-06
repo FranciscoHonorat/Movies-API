@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/FranciscoHonorat/movies/proto"
 	"github.com/FranciscoHonorat/movies/shared"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type MovieHandler struct {
@@ -137,12 +139,12 @@ func (m *MovieHandler) ListMovie(c *gin.Context) {
 
 // CreateMovie godoc
 // @Summary      Criar novo filme
-// @Description  Cria um novo filme no banco de dados com os dados fornecidos
+// @Description  Enfileira a criação de um novo filme e devolve um ID de correlação para acompanhar o resultado
 // @Tags         Movies
 // @Param        body  body      CreateMovieStruct  true   "Dados do novo filme"
 // @Accept       json
 // @Produce      json
-// @Success      202  {object}  map[string]interface{}               "Filme criado com sucesso"
+// @Success      202  {object}  map[string]string                    "Criação aceita; consulte o status pelo correlation_id"
 // @Failure      400  {object}  map[string]string                    "Dados inválidos ou campos obrigatórios faltando"
 // @Failure      500  {object}  map[string]string                    "Erro interno do servidor"
 // @Router       /movies [post]
@@ -152,9 +154,12 @@ func (m *MovieHandler) CreateMovie(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON or missing required fields"})
 		return
 	}
+
+	correlationID := uuid.NewString()
 	err := m.publisher.Publish(c.Request.Context(), shared.MoviePublisherMessage{
-		Title: req.Title,
-		Year:  req.Year,
+		CorrelationID: correlationID,
+		Title:         req.Title,
+		Year:          req.Year,
 	})
 	if err != nil {
 		slog.Error("CreateMovie error", slog.Any("error", err))
@@ -162,7 +167,45 @@ func (m *MovieHandler) CreateMovie(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusAccepted, gin.H{"message": "Movie creation accepted"})
+	statusURL := fmt.Sprintf("/api/v1/movies/status/%s", correlationID)
+	c.Header("Location", statusURL)
+	c.JSON(http.StatusAccepted, gin.H{
+		"correlation_id": correlationID,
+		"status_url":     statusURL,
+	})
+}
+
+// GetMovieStatus godoc
+// @Summary      Consultar status de criação de filme
+// @Description  Consulta o resultado de uma criação assíncrona de filme pelo correlation_id devolvido em POST /movies
+// @Tags         Movies
+// @Param        correlationId  path      string  true   "Correlation ID devolvido na criação"
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  proto.Movie                          "Filme criado com sucesso"
+// @Success      202  {object}  map[string]string                    "Criação ainda em processamento"
+// @Failure      422  {object}  map[string]string                    "Criação falhou"
+// @Failure      500  {object}  map[string]string                    "Erro interno do servidor"
+// @Router       /movies/status/{correlationId} [get]
+func (m *MovieHandler) GetMovieStatus(c *gin.Context) {
+	correlationID := c.Param("correlationId")
+
+	resp, err := m.client.GetMovieStatus(c.Request.Context(), &proto.GetMovieStatusRequest{CorrelationId: correlationID})
+	if err != nil {
+		slog.Error("GetMovieStatus error", slog.Any("error", err))
+		c.JSON(grpcErrorToHTTP(err), gin.H{"error": err.Error()})
+		return
+	}
+
+	switch resp.Status {
+	case "completed":
+		c.Header("Location", fmt.Sprintf("/api/v1/movies/%d", resp.Movie.Id))
+		c.JSON(http.StatusOK, resp.Movie)
+	case "failed":
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"status": "failed", "error": resp.Error})
+	default:
+		c.JSON(http.StatusAccepted, gin.H{"status": "pending"})
+	}
 }
 
 // DeleteMovie godoc

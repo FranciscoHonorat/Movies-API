@@ -46,13 +46,15 @@ func main() {
 	}
 
 	collection := client.Database("moviesDB").Collection("movies")
+	jobsCollection := client.Database("moviesDB").Collection("movie_jobs")
 
 	if err := seed.Seed(ctx, collection, "movies.json"); err != nil {
 		log.Printf("Aviso ao executar o seed: %v", err)
 	}
 
 	repo := mongodb.NewMovieRepository(collection)
-	svc := service.NewMovieService(repo)
+	jobs := mongodb.NewMovieJobRepository(jobsCollection)
+	svc := service.NewMovieService(repo, jobs)
 
 	rabbitmqConsumer, err := rabbitmq.NewConsumer(rabbitmqURI, "movies_queue")
 	if err != nil {
@@ -69,17 +71,26 @@ func main() {
 		id, err := svc.NextMovieID(ctx)
 		if err != nil {
 			log.Printf("Erro ao gerar ID do filme: %v", err)
+			recordJobFailure(ctx, svc, payload.CorrelationID, err)
 			return
 		}
 
 		movie, err := entity.NewMovieEntity(id, payload.Title, payload.Year)
 		if err != nil {
 			log.Printf("Erro ao validar filme recebido via fila: %v", err)
+			recordJobFailure(ctx, svc, payload.CorrelationID, err)
 			return
 		}
 
-		if _, err := svc.CreateMovie(ctx, movie); err != nil {
+		createdMovie, err := svc.CreateMovie(ctx, movie)
+		if err != nil {
 			log.Printf("Erro ao processar filme via consumidor: %v", err)
+			recordJobFailure(ctx, svc, payload.CorrelationID, err)
+			return
+		}
+
+		if err := svc.RecordJobCompleted(ctx, payload.CorrelationID, createdMovie.GetID()); err != nil {
+			log.Printf("Erro ao registrar conclusão do job %q: %v", payload.CorrelationID, err)
 		}
 	})
 
@@ -99,5 +110,11 @@ func main() {
 	log.Printf("Servidor gRPC rodando na porta :%s...", grpcPort)
 	if err := grpcSrv.Serve(lis); err != nil {
 		log.Fatalf("Erro ao subir servidor gRPC: %v", err)
+	}
+}
+
+func recordJobFailure(ctx context.Context, svc *service.MovieService, correlationID string, cause error) {
+	if err := svc.RecordJobFailed(ctx, correlationID, cause.Error()); err != nil {
+		log.Printf("Erro ao registrar falha do job %q: %v", correlationID, err)
 	}
 }

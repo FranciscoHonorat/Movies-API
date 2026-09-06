@@ -11,10 +11,11 @@ import (
 
 type MovieService struct {
 	repo output.MovieRepository
+	jobs output.MovieJobRepository
 }
 
-func NewMovieService(repo output.MovieRepository) *MovieService {
-	return &MovieService{repo: repo}
+func NewMovieService(repo output.MovieRepository, jobs output.MovieJobRepository) *MovieService {
+	return &MovieService{repo: repo, jobs: jobs}
 }
 
 func (s *MovieService) GetMovieByID(ctx context.Context, id int32) (*entity.MovieEntity, error) {
@@ -51,4 +52,29 @@ func (s *MovieService) DeleteMovie(ctx context.Context, id int32) error {
 
 func (s *MovieService) NextMovieID(ctx context.Context) (int32, error) {
 	return s.repo.NextID(ctx)
+}
+
+func (s *MovieService) RecordJobCompleted(ctx context.Context, correlationID string, movieID int32) error {
+	return s.jobs.SaveCompleted(ctx, correlationID, movieID)
+}
+
+func (s *MovieService) RecordJobFailed(ctx context.Context, correlationID string, errMsg string) error {
+	return s.jobs.SaveFailed(ctx, correlationID, errMsg)
+}
+
+func (s *MovieService) GetJobStatus(ctx context.Context, correlationID string) (*output.MovieJobStatus, error) {
+	job, err := s.jobs.GetStatus(ctx, correlationID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &output.MovieJobStatus{Status: job.Status, Error: job.Error}
+	if job.Status == "completed" {
+		movie, err := s.repo.GetMovieByID(ctx, job.MovieID)
+		if err != nil {
+			return nil, err
+		}
+		result.Movie = movie
+	}
+	return result, nil
 }

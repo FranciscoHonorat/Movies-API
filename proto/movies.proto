@@ -17,6 +17,7 @@ service MovieService {
     rpc ListMovie(ListMovieRequest) returns (ListMovieResponse);
     rpc CreateMovie(CreateMovieRequest) returns (CreateMovieResponse);
     rpc DeleteMovie(DeleteMovieRequest) returns (DeleteMovieResponse);
+    rpc GetMovieStatus(GetMovieStatusRequest) returns (GetMovieStatusResponse);
 }
 
 message GetMovieRequest {
@@ -54,4 +55,17 @@ message DeleteMovieRequest {
 
 message DeleteMovieResponse {
     bool success = 1;
+}
+
+message GetMovieStatusRequest {
+    string correlation_id = 1;
+}
+
+message GetMovieStatusResponse {
+    // "pending", "completed" or "failed"
+    string status = 1;
+    // set only when status == "completed"
+    Movie movie = 2;
+    // set only when status == "failed"
+    string error = 3;
 }

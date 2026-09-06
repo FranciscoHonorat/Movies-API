@@ -51,6 +51,7 @@ func main() {
 	// API v1 endpoints
 	v1 := r.Group("/api/v1")
 
+	v1.GET("/movies/status/:correlationId", movieHandler.GetMovieStatus)
 	v1.GET("/movies/:id", movieHandler.GetMovie)
 	v1.GET("/movies", movieHandler.ListMovie)
 	v1.POST("/movies", movieHandler.CreateMovie)

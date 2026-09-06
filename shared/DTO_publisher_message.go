@@ -1,6 +1,7 @@
 package shared
 
 type MoviePublisherMessage struct {
-	Title string `json:"title"`
-	Year  string `json:"year"`
+	CorrelationID string `json:"correlation_id"`
+	Title         string `json:"title"`
+	Year          string `json:"year"`
 }

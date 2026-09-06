@@ -74,6 +74,7 @@ services:
       GRPC_SERVER_URL: movies-service:${MOVIES_GRPC_PORT}
       HTTP_PORT: "${API_GATEWAY_PORT}"
       RABBITMQ_URI: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:${RABBITMQ_PORT}/
+      GIN_MODE: release
     depends_on:
       movies-service:
         condition: service_started

@@ -58,6 +58,29 @@ func (m *MockMovieRepository) NextID(ctx context.Context) (int32, error) {
 	return int32(args.Int(0)), args.Error(1)
 }
 
+// Mock do MovieJobRepository
+type MockMovieJobRepository struct {
+	mock.Mock
+}
+
+func (m *MockMovieJobRepository) SaveCompleted(ctx context.Context, correlationID string, movieID int32) error {
+	args := m.Called(ctx, correlationID, movieID)
+	return args.Error(0)
+}
+
+func (m *MockMovieJobRepository) SaveFailed(ctx context.Context, correlationID string, errMsg string) error {
+	args := m.Called(ctx, correlationID, errMsg)
+	return args.Error(0)
+}
+
+func (m *MockMovieJobRepository) GetStatus(ctx context.Context, correlationID string) (*output.JobStatus, error) {
+	args := m.Called(ctx, correlationID)
+	if res := args.Get(0); res != nil {
+		return res.(*output.JobStatus), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 // Helpers de Teste
 func helperNewMovie(t *testing.T, id int32, title, year string) *entity.MovieEntity {
 	t.Helper()
@@ -107,9 +130,10 @@ func TestMovieService(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				mockRepo := new(MockMovieRepository)
+				mockJobs := new(MockMovieJobRepository)
 				tt.setupMock(mockRepo)
 
-				svc := service.NewMovieService(mockRepo)
+				svc := service.NewMovieService(mockRepo, mockJobs)
 				got, err := svc.GetMovieByID(context.Background(), tt.id)
 
 				if tt.wantErr {
@@ -170,9 +194,10 @@ func TestMovieService(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				mockRepo := new(MockMovieRepository)
+				mockJobs := new(MockMovieJobRepository)
 				tt.setupMock(mockRepo)
 
-				svc := service.NewMovieService(mockRepo)
+				svc := service.NewMovieService(mockRepo, mockJobs)
 				got, err := svc.ListMovies(context.Background(), tt.filters, tt.pagination, tt.sorting)
 
 				if tt.wantErr {
@@ -220,9 +245,10 @@ func TestMovieService(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				mockRepo := new(MockMovieRepository)
+				mockJobs := new(MockMovieJobRepository)
 				tt.setupMock(mockRepo)
 
-				svc := service.NewMovieService(mockRepo)
+				svc := service.NewMovieService(mockRepo, mockJobs)
 				got, err := svc.CountMovies(context.Background(), tt.filters)
 
 				if tt.wantErr {
@@ -277,9 +303,10 @@ func TestMovieService(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				mockRepo := new(MockMovieRepository)
+				mockJobs := new(MockMovieJobRepository)
 				tt.setupMock(mockRepo)
 
-				svc := service.NewMovieService(mockRepo)
+				svc := service.NewMovieService(mockRepo, mockJobs)
 				got, err := svc.CreateMovie(context.Background(), tt.movie)
 
 				if tt.wantErr {
@@ -297,9 +324,10 @@ func TestMovieService(t *testing.T) {
 	t.Run("NextMovieID", func(t *testing.T) {
 		t.Run("Happy Path: retorna o próximo ID gerado pelo repositório", func(t *testing.T) {
 			mockRepo := new(MockMovieRepository)
+			mockJobs := new(MockMovieJobRepository)
 			mockRepo.On("NextID", mock.Anything).Return(42, nil)
 
-			svc := service.NewMovieService(mockRepo)
+			svc := service.NewMovieService(mockRepo, mockJobs)
 			got, err := svc.NextMovieID(context.Background())
 
 			assert.NoError(t, err)
@@ -309,9 +337,10 @@ func TestMovieService(t *testing.T) {
 
 		t.Run("Sad Path: erro do repositório é propagado", func(t *testing.T) {
 			mockRepo := new(MockMovieRepository)
+			mockJobs := new(MockMovieJobRepository)
 			mockRepo.On("NextID", mock.Anything).Return(0, errors.New("falha ao gerar id"))
 
-			svc := service.NewMovieService(mockRepo)
+			svc := service.NewMovieService(mockRepo, mockJobs)
 			got, err := svc.NextMovieID(context.Background())
 
 			assert.Error(t, err)
@@ -354,9 +383,10 @@ func TestMovieService(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				mockRepo := new(MockMovieRepository)
+				mockJobs := new(MockMovieJobRepository)
 				tt.setupMock(mockRepo)
 
-				svc := service.NewMovieService(mockRepo)
+				svc := service.NewMovieService(mockRepo, mockJobs)
 				err := svc.DeleteMovie(context.Background(), tt.id)
 
 				if tt.wantErr {
@@ -364,6 +394,101 @@ func TestMovieService(t *testing.T) {
 				} else {
 					assert.NoError(t, err)
 				}
+				mockRepo.AssertExpectations(t)
+			})
+		}
+	})
+
+	t.Run("RecordJobCompleted", func(t *testing.T) {
+		mockRepo := new(MockMovieRepository)
+		mockJobs := new(MockMovieJobRepository)
+		mockJobs.On("SaveCompleted", mock.Anything, "corr-1", int32(1)).Return(nil)
+
+		svc := service.NewMovieService(mockRepo, mockJobs)
+		err := svc.RecordJobCompleted(context.Background(), "corr-1", 1)
+
+		assert.NoError(t, err)
+		mockJobs.AssertExpectations(t)
+	})
+
+	t.Run("RecordJobFailed", func(t *testing.T) {
+		mockRepo := new(MockMovieRepository)
+		mockJobs := new(MockMovieJobRepository)
+		mockJobs.On("SaveFailed", mock.Anything, "corr-1", "title not valid").Return(nil)
+
+		svc := service.NewMovieService(mockRepo, mockJobs)
+		err := svc.RecordJobFailed(context.Background(), "corr-1", "title not valid")
+
+		assert.NoError(t, err)
+		mockJobs.AssertExpectations(t)
+	})
+
+	t.Run("GetJobStatus", func(t *testing.T) {
+		completedMovie := helperNewMovie(t, 1, "Tenet", "2020")
+
+		tests := []struct {
+			name          string
+			correlationID string
+			setupMocks    func(jobs *MockMovieJobRepository, repo *MockMovieRepository)
+			want          *output.MovieJobStatus
+			wantErr       bool
+		}{
+			{
+				name:          "Happy Path: job pendente (sem registro ainda)",
+				correlationID: "corr-pending",
+				setupMocks: func(jobs *MockMovieJobRepository, repo *MockMovieRepository) {
+					jobs.On("GetStatus", mock.Anything, "corr-pending").
+						Return(&output.JobStatus{Status: "pending"}, nil)
+				},
+				want: &output.MovieJobStatus{Status: "pending"},
+			},
+			{
+				name:          "Happy Path: job concluído busca o filme criado",
+				correlationID: "corr-done",
+				setupMocks: func(jobs *MockMovieJobRepository, repo *MockMovieRepository) {
+					jobs.On("GetStatus", mock.Anything, "corr-done").
+						Return(&output.JobStatus{Status: "completed", MovieID: 1}, nil)
+					repo.On("GetMovieByID", mock.Anything, int32(1)).Return(completedMovie, nil)
+				},
+				want: &output.MovieJobStatus{Status: "completed", Movie: completedMovie},
+			},
+			{
+				name:          "Happy Path: job falhou propaga a mensagem de erro",
+				correlationID: "corr-failed",
+				setupMocks: func(jobs *MockMovieJobRepository, repo *MockMovieRepository) {
+					jobs.On("GetStatus", mock.Anything, "corr-failed").
+						Return(&output.JobStatus{Status: "failed", Error: "title not valid"}, nil)
+				},
+				want: &output.MovieJobStatus{Status: "failed", Error: "title not valid"},
+			},
+			{
+				name:          "Sad Path: erro no repositório de jobs",
+				correlationID: "corr-err",
+				setupMocks: func(jobs *MockMovieJobRepository, repo *MockMovieRepository) {
+					jobs.On("GetStatus", mock.Anything, "corr-err").
+						Return(nil, errors.New("erro de conexão com o banco"))
+				},
+				wantErr: true,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mockRepo := new(MockMovieRepository)
+				mockJobs := new(MockMovieJobRepository)
+				tt.setupMocks(mockJobs, mockRepo)
+
+				svc := service.NewMovieService(mockRepo, mockJobs)
+				got, err := svc.GetJobStatus(context.Background(), tt.correlationID)
+
+				if tt.wantErr {
+					assert.Error(t, err)
+					assert.Nil(t, got)
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, tt.want, got)
+				}
+				mockJobs.AssertExpectations(t)
 				mockRepo.AssertExpectations(t)
 			})
 		}
