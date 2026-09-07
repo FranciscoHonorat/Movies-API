@@ -13,7 +13,10 @@ metadata:
 data:
   # movies-service
   GRPC_PORT: "50051"
+  CONSUMER_WORKERS: "4"
   # api-gateway
   HTTP_PORT: "8080"
   GRPC_SERVER_URL: "movies-service:50051"
   GIN_MODE: "release"
+  # shared — both services send traces to Jaeger (monitoring/jaeger.yaml)
+  OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-service:4317"

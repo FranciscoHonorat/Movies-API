@@ -198,20 +198,54 @@ competindo com o sistema medido.
 | Criação real sustentada | **~1.400 filmes/segundo** (contagem direta no Mongo, N=20.000) |
 | Tempo total para 20.000 filmes | 15.55s |
 
-### Causa arquitetural (lida no código, não inferida do teste de carga)
+### Causa arquitetural (lida no código, não inferida do teste de carga) — e uma correção importante
 
-`movies-service/internal/adapters/rabbitmq/consumer.go` processa mensagens
-uma de cada vez, numa única goroutine (`for d := range msgs { handler(d) }`)
-— não há paralelismo de consumo. O throughput medido (~1.400/s) já é o
-throughput desse consumidor único fazendo, para cada mensagem, 3 chamadas
-sequenciais ao Mongo (gerar próximo ID, inserir, gravar status do job) —
-rápido porque essas chamadas vão direto ao driver do Mongo, sem passar
-pela pilha HTTP/gRPC do restante da API. Isso é suficiente para a carga
-deste projeto hoje, mas é um teto rígido: publicar mais rápido que isso só
-faz a fila crescer, não aumenta a taxa de criação real. Se um dia isso
-precisar ser maior, a mudança é rodar múltiplos consumidores/goroutines
-lendo da fila — não fiz isso agora por não ser um problema real observado,
-só um teto teórico que o teste revelou.
+`movies-service/internal/adapters/rabbitmq/consumer.go` processava
+mensagens uma de cada vez, numa única goroutine
+(`for d := range msgs { handler(d) }`). Na época eu interpretei o
+throughput medido acima (~1.400/s) como o teto desse consumidor único.
+**Essa interpretação estava incompleta**: rodando `rabbitmqctl
+list_queues` durante aquele teste, `messages_ready` nunca saiu de 0 — a
+fila nunca chegou a acumular, o que significa que eu nunca cheguei a
+saturar o consumidor de fato; o número media, pelo menos em parte, a
+velocidade de *publicação* via HTTP, não só a de consumo. A investigação
+completa — incluindo o teste que efetivamente satura o consumidor e mede
+sua taxa real — está em `docs/adr/0005-*.md` e resumida abaixo.
+
+## Fase 2b: múltiplos consumers — escala sub-linear, não linear
+
+Implementei consumo paralelo (`CONSUMER_WORKERS`, `movies-service/internal/adapters/rabbitmq/consumer.go`)
+esperando provar escala linear. Não foi isso que a medição mostrou.
+
+Para medir isso direito, publiquei direto no RabbitMQ via AMQP
+(`tools/direct-publish/`, ~65.000 msg/s — rápido o bastante para garantir
+um backlog real, confirmado via `rabbitmqctl list_queues`) e amostrei
+`db.movies.countDocuments(...)` a cada 15ms:
+
+| Workers | Taxa sustentada |
+|---|---|
+| 1 | 1.552/s |
+| 2 | 1.708/s (+10%) |
+| 4 | 2.013/s (+30%) |
+| 8 | 1.726/s (**pior que 4**) |
+
+Com 4 workers, `docker stats` mostrou `movies-mongo` a 77% de CPU e
+`movies-service` a 56% — nenhum perto de saturar (a mesma `movies-mongo`
+já sustentou 582% de CPU no teste da Fase 1). CPU sobrando + throughput
+que não escala é a assinatura de **contenção**, não de falta de
+paralelismo real: a explicação mais provável é o contador atômico de ID
+(`movies-service/internal/adapters/mongodb/movie_repo.go`, `NextID`) —
+um único documento Mongo incrementado por `$inc` a cada mensagem, ponto de
+serialização por construção (decisão da ADR 0001), não importa quantos
+workers concorrem por ele. Raciocínio completo, alternativas consideradas
+e o porquê de eu não ter "corrigido" essa contenção agora:
+`docs/adr/0005-*.md`. Lição generalizável sobre por que concorrência não
+ajuda quando existe um ponto de serialização compartilhado:
+`docs/learning/0004-*.md`.
+
+Mantive o padrão em 4 workers (`CONSUMER_WORKERS=4`) — o melhor resultado
+entre os testados, mesmo sem ser o crescimento linear que eu queria
+mostrar.
 
 ## Fase 3: memória e CPU sob carga sustentada
 
@@ -260,7 +294,7 @@ memória praticamente não sobe sob carga), reportei isso mesmo assim.
 ### Throughput
 
 - **Listagem (`GET /movies`, 28k docs, pós-correção de índice):** 500 req/s sustentados, 100% sucesso.
-- **Criação assíncrona (`POST /movies` → RabbitMQ → `movies-service`):** ~1.400 filmes/segundo sustentados (medido via contagem direta no MongoDB — ver Fase 2).
+- **Criação assíncrona (`POST /movies` → RabbitMQ → `movies-service`):** 1.552/s com 1 consumer, **2.013/s com 4** (o padrão atual, `CONSUMER_WORKERS=4`) — escala sub-linear, não linear; ver Fase 2b e `docs/adr/0005-*.md` para o porquê.
 - **Exclusão (`DELETE /movies/{id}`):** 100 req/s testados, 100% sucesso (não empurrei além disso — sem indício de que precisasse).
 - **Consulta de status (`GET /movies/status/{id}`):** 200 req/s testados, 100% sucesso.
 
@@ -290,7 +324,7 @@ P99 6.86s — ver "O achado" acima para a tabela completa antes/depois.)
 
 ### Teste de Volume
 
-- **20.000 filmes criados via pipeline assíncrono:** 15.55 segundos (~1.400/s sustentado).
+- **100.000 filmes publicados direto no RabbitMQ (bypassando o gateway):** consumidos a 1.552/s com 1 worker, 2.013/s com 4 (ver Fase 2b).
 
 ### Capturado em
 
@@ -308,10 +342,12 @@ P99 6.86s — ver "O achado" acima para a tabela completa antes/depois.)
   plataforma de compute para `api-gateway`+`movies-service` (empacotados
   no mesmo container, já que só o gateway fala HTTP) — pausado por ora
   para priorizar as Fases 3/4 localmente.
-- Se o throughput de criação (~1.400/s) algum dia deixar de ser
-  suficiente, rodar múltiplos consumidores/goroutines lendo da fila RabbitMQ
-  em paralelo é o próximo passo — hoje é um teto teórico sem uso real
-  batendo nele, não um problema observado em produção.
+- Múltiplos consumers já implementados (ADR 0005), mas a escala é
+  sub-linear (satura por volta de 4 workers) por causa da contenção no
+  contador atômico de ID. Se o throughput de criação precisar crescer de
+  verdade no futuro, pré-alocar blocos de IDs por worker (em vez de um
+  `$inc` de 1 por mensagem) é o próximo passo natural — não fiz isso agora
+  por ser uma mudança de escopo maior que "adicionar workers".
 - `GET /movies?title=...` com regex não-ancorado (`$regex` sem `^`) nunca
   vai usar um índice para o *filtro* em si, só para a ordenação — se a
   busca por título crescer em importância, um índice de texto

@@ -1,17 +1,26 @@
 package main
 
 import (
+	"context"
 	"log"
+	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	_ "github.com/FranciscoHonorat/movies/api-gateway/docs"
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/adapters/rabbitmq"
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/handlers"
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/observability"
+	"github.com/FranciscoHonorat/movies/api-gateway/internal/resilience"
 	"github.com/FranciscoHonorat/movies/proto"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -29,19 +38,40 @@ import (
 // @BasePath        /api/v1
 // @schemes         http https
 func main() {
-	conn, err := grpc.NewClient(os.Getenv("GRPC_SERVER_URL"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	shutdownTracing, err := observability.InitTracing(ctx, "api-gateway", os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracing(shutdownCtx); err != nil {
+			slog.Error("erro ao encerrar tracing", "error", err)
+		}
+	}()
+
+	conn, err := grpc.NewClient(
+		os.Getenv("GRPC_SERVER_URL"),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	client := proto.NewMovieServiceClient(conn)
+	client := resilience.NewMovieServiceClient(proto.NewMovieServiceClient(conn))
 	newRabbitMQPublisher, err := rabbitmq.NewRabbitMQPublisher(os.Getenv("RABBITMQ_URI"), "movies_queue")
 	if err != nil {
 		log.Fatal(err)
 	}
-	movieHandler := handlers.NewMovieHandler(client, newRabbitMQPublisher)
+	publisher := resilience.NewPublisher(newRabbitMQPublisher)
+	movieHandler := handlers.NewMovieHandler(client, publisher)
 
 	r := gin.Default()
+	r.Use(otelgin.Middleware("api-gateway"))
 	r.Use(observability.GinMiddleware())
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -61,5 +91,27 @@ func main() {
 	if httpPort == "" {
 		httpPort = "8080"
 	}
-	r.Run(":" + httpPort)
+
+	srv := &http.Server{Addr: ":" + httpPort, Handler: r}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Erro ao subir servidor HTTP: %v", err)
+		}
+	}()
+
+	// Block on ctx (SIGINT/SIGTERM) instead of srv.ListenAndServe()
+	// directly: shutting the HTTP server down explicitly, before the
+	// deferred shutdownTracing above runs, is what makes that defer
+	// actually reachable. r.Run() (used before this change) blocks
+	// forever, so on a real SIGTERM the process would die before ever
+	// returning from main — the tracer's buffered spans (BatchSpanProcessor
+	// flushes periodically, not per-span) would be silently dropped
+	// instead of exported on shutdown.
+	<-ctx.Done()
+	slog.Info("sinal de encerramento recebido, desligando")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		slog.Error("erro ao desligar servidor HTTP", "error", err)
+	}
 }

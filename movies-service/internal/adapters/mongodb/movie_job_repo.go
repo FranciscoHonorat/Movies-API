@@ -26,28 +26,36 @@ func NewMovieJobRepository(collection *mongo.Collection) output.MovieJobReposito
 }
 
 func (r *MovieJob) SaveCompleted(ctx context.Context, correlationID string, movieID int32) error {
-	_, err := r.collection.UpdateByID(ctx, correlationID, bson.M{
-		"$set": bson.M{"status": "completed", "movie_id": movieID},
-	}, options.UpdateOne().SetUpsert(true))
+	_, err := withSpan(ctx, "mongodb.SaveCompleted", func(ctx context.Context) (struct{}, error) {
+		_, err := r.collection.UpdateByID(ctx, correlationID, bson.M{
+			"$set": bson.M{"status": "completed", "movie_id": movieID},
+		}, options.UpdateOne().SetUpsert(true))
+		return struct{}{}, err
+	})
 	return err
 }
 
 func (r *MovieJob) SaveFailed(ctx context.Context, correlationID string, errMsg string) error {
-	_, err := r.collection.UpdateByID(ctx, correlationID, bson.M{
-		"$set": bson.M{"status": "failed", "error": errMsg},
-	}, options.UpdateOne().SetUpsert(true))
+	_, err := withSpan(ctx, "mongodb.SaveFailed", func(ctx context.Context) (struct{}, error) {
+		_, err := r.collection.UpdateByID(ctx, correlationID, bson.M{
+			"$set": bson.M{"status": "failed", "error": errMsg},
+		}, options.UpdateOne().SetUpsert(true))
+		return struct{}{}, err
+	})
 	return err
 }
 
 func (r *MovieJob) GetStatus(ctx context.Context, correlationID string) (*output.JobStatus, error) {
-	var doc jobDocument
-	err := r.collection.FindOne(ctx, bson.M{"_id": correlationID}).Decode(&doc)
-	if errors.Is(err, mongo.ErrNoDocuments) {
-		return &output.JobStatus{Status: "pending"}, nil
-	}
-	if err != nil {
-		return nil, err
-	}
+	return withSpan(ctx, "mongodb.GetStatus", func(ctx context.Context) (*output.JobStatus, error) {
+		var doc jobDocument
+		err := r.collection.FindOne(ctx, bson.M{"_id": correlationID}).Decode(&doc)
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return &output.JobStatus{Status: "pending"}, nil
+		}
+		if err != nil {
+			return nil, err
+		}
 
-	return &output.JobStatus{Status: doc.Status, MovieID: doc.MovieID, Error: doc.Error}, nil
+		return &output.JobStatus{Status: doc.Status, MovieID: doc.MovieID, Error: doc.Error}, nil
+	})
 }

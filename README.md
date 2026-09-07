@@ -54,9 +54,10 @@ docker compose up -d --build
 curl http://localhost:8080/health
 ```
 
-Sobe 4 containers: `api-gateway`, `movies-service`, MongoDB (com seed
-automático de ~28 mil filmes) e RabbitMQ. Nenhuma dependência de nuvem —
-tudo roda na sua máquina.
+Sobe 5 containers: `api-gateway`, `movies-service`, MongoDB (com seed
+automático de ~28 mil filmes), RabbitMQ e Jaeger (UI de trace distribuído
+em `http://localhost:16686`). Nenhuma dependência de nuvem — tudo roda na
+sua máquina.
 
 ## API
 
@@ -105,7 +106,7 @@ corrigi no caminho) estão documentados lá.
 | `GET /movies` (listagem, 28k docs) | 500 req/s, p99 5.9ms, 100% sucesso | idem, após corrigir índice ausente |
 | `GET /movies/status/{id}` | 200 req/s, p99 2.5ms, 100% sucesso | idem |
 | `DELETE /movies/{id}` | 100 req/s, p99 2.3ms, 100% sucesso | testado contra filmes descartáveis, não contra o dataset de seed |
-| Criação assíncrona (`POST /movies` → RabbitMQ → `movies-service`) | ~1.400 filmes/s sustentados | contagem direta no Mongo durante um lote de 20.000 |
+| Criação assíncrona (`POST /movies` → RabbitMQ → `movies-service`) | 2.013 filmes/s sustentados com 4 consumers (escala sub-linear — ver ADR 0005) | publish direto no RabbitMQ + contagem no Mongo, 100k mensagens |
 | Memória sob carga sustentada (60s) | sem crescimento contínuo em nenhum dos 4 containers | `docker stats` amostrado a cada 5s |
 
 **Achado real:** a listagem não tinha índice em `title` (campo da
@@ -137,6 +138,39 @@ não a URL crua). `movies-service` ainda não expõe métricas (só fala gRPC
 hoje). Stack completo de Prometheus + Grafana rodando em Kubernetes local:
 ver `infra/kubernetes/monitoring/`.
 
+## Trace distribuído
+
+Toda requisição gera uma trace OpenTelemetry que atravessa `api-gateway` →
+`movies-service` → MongoDB — incluindo o caminho assíncrono via RabbitMQ,
+onde o contexto de trace viaja nos headers AMQP da própria mensagem
+(`shared.AMQPHeaderCarrier`, já que não existe instrumentação automática
+pra fila de mensagens do jeito que existe pra HTTP/gRPC). Visualize em
+`http://localhost:16686` (Jaeger) depois de `docker compose up`.
+
+Confirmado contra o Jaeger real, não só o código: uma trace do caminho
+síncrono (`GET /movies/{id}`) mostra `api-gateway` → chamada gRPC →
+`movies-service` → consulta ao Mongo, tudo com relação pai-filho correta;
+uma trace do caminho assíncrono (`POST /movies`) mostra a publicação no
+RabbitMQ e o consumo do outro lado como parte da mesma trace. Detalhes,
+inclusive uma incompatibilidade real que encontrei (a instrumentação
+oficial de MongoDB não suporta a v2 do driver que este projeto usa) em
+[`docs/adr/0007-*.md`](docs/adr/0007-trace-distribuido-com-jaeger.md).
+
+## Resiliência
+
+As duas chamadas de rede do `api-gateway` (gRPC para `movies-service`,
+publish no RabbitMQ) passam por retry com backoff + circuit breaker
+(`api-gateway/internal/resilience`) — uma dependência fora do ar vira uma
+falha rápida e previsível (~8ms com o breaker aberto), não uma requisição
+travada por dezenas de segundos. Estado de cada breaker é visível ao vivo
+em `/metrics` (`circuit_breaker_state`, `circuit_breaker_trips_total`).
+
+Validado contra o `docker-compose` real, não só com mocks — parar e
+religar `movies-service`/`rabbitmq` revelou dois bugs reais no caminho
+(uma chamada gRPC sem timeout que travava por 20s, e um publisher
+RabbitMQ que nunca reconectava sozinho) documentados, com os números
+medidos, em [`docs/adr/0006-*.md`](docs/adr/0006-circuit-breaker-e-retry-no-api-gateway.md).
+
 ## Infraestrutura e deploy
 
 Kubernetes local (`kind`) e Terraform (contra LocalStack, sem custo real)
@@ -153,7 +187,7 @@ por trás de cada decisão não-óbvia mora em `docs/`:
 
 - **`docs/adr/`** — Architecture Decision Records: o que foi decidido, as
   alternativas consideradas e por que foram descartadas, numeradas em
-  ordem cronológica (0001 a 0004 até agora).
+  ordem cronológica (0001 a 0007 até agora).
 - **`docs/learning/`** — lições generalizáveis tiradas ao longo do
   caminho (não específicas deste projeto), com referências bibliográficas
   quando aplicável — ex.: por que uma tag de struct mal formatada pode ser

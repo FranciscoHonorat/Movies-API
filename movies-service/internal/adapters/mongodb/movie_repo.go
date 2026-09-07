@@ -11,7 +11,30 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
+
+var tracer = otel.Tracer("movies-service/mongodb")
+
+// withSpan wraps a Mongo call in a span named after the operation, so a
+// trace shows where time actually went (e.g. "mongodb.NextID" contending
+// on the counter document — see docs/adr/0005-*.md — is a lot easier to
+// spot in Jaeger than in a log line). Errors are recorded on the span but
+// still returned unchanged to the caller; this package doesn't change
+// what any method returns, only what gets reported alongside it.
+func withSpan[T any](ctx context.Context, name string, fn func(context.Context) (T, error)) (T, error) {
+	ctx, span := tracer.Start(ctx, name, trace.WithSpanKind(trace.SpanKindClient))
+	defer span.End()
+
+	result, err := fn(ctx)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return result, err
+}
 
 const idCounterDocID = "movie_id"
 
@@ -67,126 +90,138 @@ func ToDomain(doc movieRepository) (*entity.MovieEntity, error) {
 }
 
 func (m *Movie) GetMovieByID(ctx context.Context, id int32) (*entity.MovieEntity, error) {
-	filter := bson.M{"_id": id}
+	return withSpan(ctx, "mongodb.GetMovieByID", func(ctx context.Context) (*entity.MovieEntity, error) {
+		filter := bson.M{"_id": id}
 
-	var doc movieRepository
-	err := m.collection.FindOne(ctx, filter).Decode(&doc)
-	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, errD.ErrMovieNotFound
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return ToDomain(doc)
-}
-
-func (m *Movie) ListMovies(ctx context.Context, filters output.Listfilters, pagination output.Pagination, sorting output.Sorting) ([]*entity.MovieEntity, error) {
-	filter := bson.M{}
-	if filters.Title != "" {
-		filter["title"] = bson.M{"$regex": filters.Title, "$options": "i"}
-	}
-	if filters.Year != "" {
-		filter["year"] = filters.Year
-	}
-
-	findOptions := options.Find()
-	if pagination.Limit > 0 {
-		findOptions.SetLimit(int64(pagination.Limit))
-	}
-	if pagination.Page > 0 && pagination.Limit > 0 {
-		findOptions.SetSkip(int64((pagination.Page - 1) * pagination.Limit))
-	}
-	if sorting.SortBy != "" {
-		findOptions.SetSort(bson.D{bson.E{Key: sorting.SortBy, Value: 1}})
-	}
-
-	cursor, err := m.collection.Find(ctx, filter, findOptions)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var movies []*entity.MovieEntity
-	for cursor.Next(ctx) {
 		var doc movieRepository
-		if err := cursor.Decode(&doc); err != nil {
-			return nil, err
+		err := m.collection.FindOne(ctx, filter).Decode(&doc)
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, errD.ErrMovieNotFound
 		}
-		movie, err := ToDomain(doc)
 		if err != nil {
 			return nil, err
 		}
-		movies = append(movies, movie)
-	}
 
-	return movies, nil
+		return ToDomain(doc)
+	})
+}
+
+func (m *Movie) ListMovies(ctx context.Context, filters output.Listfilters, pagination output.Pagination, sorting output.Sorting) ([]*entity.MovieEntity, error) {
+	return withSpan(ctx, "mongodb.ListMovies", func(ctx context.Context) ([]*entity.MovieEntity, error) {
+		filter := bson.M{}
+		if filters.Title != "" {
+			filter["title"] = bson.M{"$regex": filters.Title, "$options": "i"}
+		}
+		if filters.Year != "" {
+			filter["year"] = filters.Year
+		}
+
+		findOptions := options.Find()
+		if pagination.Limit > 0 {
+			findOptions.SetLimit(int64(pagination.Limit))
+		}
+		if pagination.Page > 0 && pagination.Limit > 0 {
+			findOptions.SetSkip(int64((pagination.Page - 1) * pagination.Limit))
+		}
+		if sorting.SortBy != "" {
+			findOptions.SetSort(bson.D{bson.E{Key: sorting.SortBy, Value: 1}})
+		}
+
+		cursor, err := m.collection.Find(ctx, filter, findOptions)
+		if err != nil {
+			return nil, err
+		}
+		defer cursor.Close(ctx)
+
+		var movies []*entity.MovieEntity
+		for cursor.Next(ctx) {
+			var doc movieRepository
+			if err := cursor.Decode(&doc); err != nil {
+				return nil, err
+			}
+			movie, err := ToDomain(doc)
+			if err != nil {
+				return nil, err
+			}
+			movies = append(movies, movie)
+		}
+
+		return movies, nil
+	})
 }
 
 func (m *Movie) CountMovies(ctx context.Context, filters output.Listfilters) (int32, error) {
-	filter := bson.M{}
-	if filters.Title != "" {
-		filter["title"] = bson.M{"$regex": filters.Title, "$options": "i"}
-	}
-	if filters.Year != "" {
-		filter["year"] = filters.Year
-	}
+	return withSpan(ctx, "mongodb.CountMovies", func(ctx context.Context) (int32, error) {
+		filter := bson.M{}
+		if filters.Title != "" {
+			filter["title"] = bson.M{"$regex": filters.Title, "$options": "i"}
+		}
+		if filters.Year != "" {
+			filter["year"] = filters.Year
+		}
 
-	count, err := m.collection.CountDocuments(ctx, filter)
-	if err != nil {
-		return 0, err
-	}
+		count, err := m.collection.CountDocuments(ctx, filter)
+		if err != nil {
+			return 0, err
+		}
 
-	return int32(count), nil
+		return int32(count), nil
+	})
 }
 
 func (m *Movie) CreateMovie(ctx context.Context, movie *entity.MovieEntity) (*entity.MovieEntity, error) {
-	opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
-	filter := bson.M{"_id": movie.GetID()}
-	update := bson.M{"$set": ToDocument(movie)}
+	return withSpan(ctx, "mongodb.CreateMovie", func(ctx context.Context) (*entity.MovieEntity, error) {
+		opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
+		filter := bson.M{"_id": movie.GetID()}
+		update := bson.M{"$set": ToDocument(movie)}
 
-	var updatedDoc movieRepository
-	err := m.collection.FindOneAndUpdate(ctx, filter, update, opts).Decode(&updatedDoc)
-	if err != nil {
-		return nil, err
-	}
+		var updatedDoc movieRepository
+		err := m.collection.FindOneAndUpdate(ctx, filter, update, opts).Decode(&updatedDoc)
+		if err != nil {
+			return nil, err
+		}
 
-	return ToDomain(updatedDoc)
+		return ToDomain(updatedDoc)
+	})
 }
 
 func (m *Movie) DeleteMovie(ctx context.Context, id int32) error {
-	filter := bson.M{"_id": id}
+	_, err := withSpan(ctx, "mongodb.DeleteMovie", func(ctx context.Context) (struct{}, error) {
+		filter := bson.M{"_id": id}
 
-	result, err := m.collection.DeleteOne(ctx, filter)
-	if err != nil {
-		return err
-	}
-	if result.DeletedCount == 0 {
-		return errD.ErrMovieNotFound
-	}
-
-	return nil
+		result, err := m.collection.DeleteOne(ctx, filter)
+		if err != nil {
+			return struct{}{}, err
+		}
+		if result.DeletedCount == 0 {
+			return struct{}{}, errD.ErrMovieNotFound
+		}
+		return struct{}{}, nil
+	})
+	return err
 }
 
 func (m *Movie) NextID(ctx context.Context) (int32, error) {
-	m.counterOnce.Do(func() {
-		m.counterErr = m.seedCounterFromExistingMovies(ctx)
+	return withSpan(ctx, "mongodb.NextID", func(ctx context.Context) (int32, error) {
+		m.counterOnce.Do(func() {
+			m.counterErr = m.seedCounterFromExistingMovies(ctx)
+		})
+		if m.counterErr != nil {
+			return 0, m.counterErr
+		}
+
+		filter := bson.M{"_id": idCounterDocID}
+		update := bson.M{"$inc": bson.M{"seq": 1}}
+		opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
+
+		var doc struct {
+			Seq int32 `bson:"seq"`
+		}
+		if err := m.counters.FindOneAndUpdate(ctx, filter, update, opts).Decode(&doc); err != nil {
+			return 0, err
+		}
+		return doc.Seq, nil
 	})
-	if m.counterErr != nil {
-		return 0, m.counterErr
-	}
-
-	filter := bson.M{"_id": idCounterDocID}
-	update := bson.M{"$inc": bson.M{"seq": 1}}
-	opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
-
-	var doc struct {
-		Seq int32 `bson:"seq"`
-	}
-	if err := m.counters.FindOneAndUpdate(ctx, filter, update, opts).Decode(&doc); err != nil {
-		return 0, err
-	}
-	return doc.Seq, nil
 }
 
 func (m *Movie) seedCounterFromExistingMovies(ctx context.Context) error {

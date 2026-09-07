@@ -27,9 +27,10 @@ go.work.sum
 # env file
 .env
 
-# Compiled binary of the ingest-load tool (built via `go build`/`go run`;
-# never meant to be committed — see docs/performance/tools/ingest-load).
+# Compiled binaries of the load-testing tools (built via `go build`/
+# `go run`; never meant to be committed — see docs/performance/tools/).
 docs/performance/tools/ingest-load/ingest-load
+docs/performance/tools/direct-publish/direct-publish
 
 # Raw vegeta attack dumps (binary, includes full response bodies — can get
 # large fast). The human-readable *-report.txt summaries in

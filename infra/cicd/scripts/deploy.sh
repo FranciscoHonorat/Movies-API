@@ -45,6 +45,7 @@ kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/infra/kubernetes/mongodb-deploym
 kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/infra/kubernetes/mongodb-service.yaml"
 kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/infra/kubernetes/rabbitmq-deployment.yaml"
 kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/infra/kubernetes/rabbitmq-service.yaml"
+kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/infra/kubernetes/monitoring/jaeger.yaml"
 kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/infra/kubernetes/backend-movies-service-deployment.yaml"
 kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/infra/kubernetes/backend-movies-service-service.yaml"
 kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/infra/kubernetes/backend-api-gateway-deployment.yaml"
