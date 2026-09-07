@@ -15,6 +15,21 @@ jobs:
     strategy:
       matrix:
         module: ['./api-gateway', './movies-service']
+    # movies-service's mongodb/seed integration tests dial a real MongoDB at
+    # localhost:27017 (see ADR 0001/0002); without this service they fail
+    # fast with "connection refused" on every push. api-gateway doesn't use
+    # it, but services are job-scoped in the matrix so it's started for both
+    # legs — harmless, and keeps this workflow a single job to maintain.
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - uses: actions/checkout@v4
 
@@ -31,4 +46,7 @@ jobs:
 
     - name: Test
       working-directory: ${{ matrix.module }}
-      run: go test -v ./...
+      # -p 1: mongodb and seed packages share the "testdb" Mongo database:
+      # running their tests in parallel process groups makes them race on
+      # the same collections (documented in ADR 0001).
+      run: go test -p 1 -v ./...

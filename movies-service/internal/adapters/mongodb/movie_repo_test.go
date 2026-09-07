@@ -2,8 +2,10 @@ package mongodb_test
 
 import (
 	"context"
+	"errors"
 	"movies-service/internal/adapters/mongodb"
 	"movies-service/internal/core/domain/entity"
+	errD "movies-service/internal/core/domain/err-d"
 	"movies-service/internal/core/port/output"
 	"testing"
 	"time"
@@ -87,7 +89,7 @@ func TestMovieRepository(t *testing.T) {
 
 		movie, err := repo.GetMovieByID(context.Background(), 999)
 		assert.Nil(t, movie)
-		assert.Error(t, err)
+		assert.True(t, errors.Is(err, errD.ErrMovieNotFound), "esperado errD.ErrMovieNotFound, obtido: %v", err)
 	})
 
 	t.Run("Sad Path: ListMovies with no matching filters", func(t *testing.T) {
@@ -141,7 +143,7 @@ func TestMovieRepository(t *testing.T) {
 
 		movie, err := repo.GetMovieByID(context.Background(), 10)
 		assert.Nil(t, movie)
-		assert.Error(t, err)
+		assert.True(t, errors.Is(err, errD.ErrMovieNotFound), "esperado errD.ErrMovieNotFound, obtido: %v", err)
 	})
 
 	t.Run("Sad Path: DeleteMovie with non-existent ID", func(t *testing.T) {
@@ -153,7 +155,7 @@ func TestMovieRepository(t *testing.T) {
 		repo := mongodb.NewMovieRepository(collection)
 
 		err = repo.DeleteMovie(context.Background(), 999)
-		assert.Error(t, err)
+		assert.True(t, errors.Is(err, errD.ErrMovieNotFound), "esperado errD.ErrMovieNotFound, obtido: %v", err)
 	})
 
 	t.Run("Sad Path: Insert movie with duplicate ID", func(t *testing.T) {

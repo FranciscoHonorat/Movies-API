@@ -42,13 +42,10 @@ func main() {
 
 	r := gin.Default()
 
-	// Swagger UI
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Health check endpoint
 	r.GET("/health", handlers.HealthHandler)
 
-	// API v1 endpoints
 	v1 := r.Group("/api/v1")
 
 	v1.GET("/movies/status/:correlationId", movieHandler.GetMovieStatus)

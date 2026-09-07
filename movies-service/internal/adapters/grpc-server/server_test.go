@@ -248,7 +248,7 @@ func TestServer(t *testing.T) {
 				setupMock: func(m *MockMovieService) {
 					m.On("NextMovieID", mock.Anything).Return(1, nil)
 					m.On("CreateMovie", mock.Anything, mock.AnythingOfType("*entity.MovieEntity")).
-						Return(nil, errD.ErrInvalidMovieData) // Ou outro erro mapeado para InvalidArgument
+						Return(nil, errD.ErrInvalidMovieData)
 				},
 				wantErr:      true,
 				expectedCode: codes.InvalidArgument,

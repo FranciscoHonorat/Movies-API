@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Mock do MovieRepository
 type MockMovieRepository struct {
 	mock.Mock
 }
@@ -58,7 +57,6 @@ func (m *MockMovieRepository) NextID(ctx context.Context) (int32, error) {
 	return int32(args.Int(0)), args.Error(1)
 }
 
-// Mock do MovieJobRepository
 type MockMovieJobRepository struct {
 	mock.Mock
 }
@@ -81,7 +79,6 @@ func (m *MockMovieJobRepository) GetStatus(ctx context.Context, correlationID st
 	return nil, args.Error(1)
 }
 
-// Helpers de Teste
 func helperNewMovie(t *testing.T, id int32, title, year string) *entity.MovieEntity {
 	t.Helper()
 	movie, err := entity.NewMovieEntity(id, title, year)

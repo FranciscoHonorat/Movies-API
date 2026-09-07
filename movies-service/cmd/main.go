@@ -35,7 +35,6 @@ func main() {
 		rabbitmqURI = "amqp://guest:guest@localhost:5672/"
 	}
 
-	// 2. Conexão com MongoDB
 	client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		log.Fatalf("Erro ao conectar no MongoDB: %v", err)

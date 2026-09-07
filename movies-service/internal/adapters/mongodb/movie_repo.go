@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"movies-service/internal/core/domain/entity"
+	errD "movies-service/internal/core/domain/err-d"
 	"movies-service/internal/core/port/output"
 	"sync"
 
@@ -12,8 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-// idCounterDocID identifies the single document in the "counters" collection
-// that tracks the last movie ID handed out by NextID.
 const idCounterDocID = "movie_id"
 
 type Movie struct {
@@ -54,6 +53,9 @@ func (m *Movie) GetMovieByID(ctx context.Context, id int32) (*entity.MovieEntity
 
 	var doc movieRepository
 	err := m.collection.FindOne(ctx, filter).Decode(&doc)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, errD.ErrMovieNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -142,15 +144,12 @@ func (m *Movie) DeleteMovie(ctx context.Context, id int32) error {
 		return err
 	}
 	if result.DeletedCount == 0 {
-		return mongo.ErrNoDocuments
+		return errD.ErrMovieNotFound
 	}
 
 	return nil
 }
 
-// NextID hands out a new, previously unused movie ID via an atomic counter
-// document. On first use it seeds the counter from the highest _id already
-// present in the movies collection, so it never collides with seeded data.
 func (m *Movie) NextID(ctx context.Context) (int32, error) {
 	m.counterOnce.Do(func() {
 		m.counterErr = m.seedCounterFromExistingMovies(ctx)
@@ -186,8 +185,6 @@ func (m *Movie) seedCounterFromExistingMovies(ctx context.Context) error {
 		return err
 	}
 
-	// $max creates the field on upsert and only raises it if a lower value is
-	// already stored, so this is safe to (re)run even if the counter exists.
 	_, err = m.counters.UpdateOne(ctx,
 		bson.M{"_id": idCounterDocID},
 		bson.M{"$max": bson.M{"seq": doc.ID}},

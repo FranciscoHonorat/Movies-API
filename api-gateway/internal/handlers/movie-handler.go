@@ -19,7 +19,7 @@ type MovieHandler struct {
 }
 
 type CreateMovieStruct struct {
-	Title string `json:"title" binding:"required, max=300"`
+	Title string `json:"title" binding:"required,max=300"`
 	Year  string `json:"year" binding:"required"`
 }
 
@@ -29,8 +29,6 @@ type ListMovieStruct struct {
 	Limit int32          `json:"limit"`
 }
 
-// NewMovieHandler cria uma nova instância de MovieHandler
-// Inicializa o handler com um cliente gRPC para communicação com o Movies Service
 func NewMovieHandler(client proto.MovieServiceClient, publisher output.MoviePublisher) *MovieHandler {
 	return &MovieHandler{client: client, publisher: publisher}
 }
