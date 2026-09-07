@@ -1,0 +1,37 @@
+# One namespace per environment. Everything else in this directory targets
+# whichever namespace is active in the current kubectl context — set it with:
+#   kubectl config set-context --current --namespace=re-api-books-dev
+# pod-security.kubernetes.io/* labels enable Pod Security Admission — built
+# into Kubernetes core since 1.25, free, no controller to install. This
+# replaces PodSecurityPolicy (removed from Kubernetes in 1.25) from the
+# original infra/ template's pod-security-policies.yaml, which wouldn't
+# even apply to a current cluster.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: re-api-books-dev
+  labels:
+    app.kubernetes.io/part-of: re-api-books
+    environment: dev
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: re-api-books-staging
+  labels:
+    app.kubernetes.io/part-of: re-api-books
+    environment: staging
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: re-api-books-prod
+  labels:
+    app.kubernetes.io/part-of: re-api-books
+    environment: prod
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted

@@ -1,0 +1,17 @@
+t=0.00s count=559
+t=1.94s count=1659
+t=3.37s count=3598
+t=4.40s count=5784
+t=5.71s count=7803
+t=6.76s count=9978
+t=8.05s count=11647
+t=9.29s count=12996
+t=10.58s count=14520
+t=11.80s count=15904
+t=13.10s count=17287
+t=14.36s count=18684
+t=15.55s count=20000
+t=16.84s count=20000
+t=18.07s count=20000
+t=19.20s count=20000
+t=20.22s count=20000

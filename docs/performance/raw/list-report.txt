@@ -1,0 +1,9 @@
+Requests      [total, rate, throughput]  2000, 100.05, 69.22
+Duration      [total, attack, wait]      28.835444812s, 19.990458973s, 8.844985839s
+Latencies     [mean, 50, 95, 99, max]    4.92084926s, 5.065365722s, 9.010511691s, 9.479402698s, 10.001054065s
+Bytes In      [total, mean]              1213568, 606.78
+Bytes Out     [total, mean]              0, 0.00
+Success       [ratio]                    99.80%
+Status Codes  [code:count]               0:4  200:1996  
+Error Set:
+Get "http://localhost:8080/api/v1/movies?limit=10": context deadline exceeded (Client.Timeout exceeded while awaiting headers)

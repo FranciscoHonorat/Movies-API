@@ -1,0 +1,22 @@
+# Local Kubernetes cluster config for `kind` (https://kind.sigs.k8s.io) —
+# free, runs entirely in Docker on your machine. This is the cluster
+# infra/kubernetes/*.yaml, infra/cicd/scripts/deploy.sh and
+# infra/kubernetes/ingress.yaml all assume.
+#
+# Create the cluster once with:
+#   kind create cluster --name re-api-books --config infra/kubernetes/kind-config.yaml
+#
+# extraPortMappings expose the ingress controller's ports on localhost, so
+# `curl http://re-api-books.local` (with that host in /etc/hosts pointing
+# at 127.0.0.1) reaches api-gateway without any cloud load balancer.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP

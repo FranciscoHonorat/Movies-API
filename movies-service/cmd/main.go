@@ -51,6 +51,10 @@ func main() {
 		log.Printf("Aviso ao executar o seed: %v", err)
 	}
 
+	if err := mongodb.EnsureIndexes(ctx, collection); err != nil {
+		log.Printf("Aviso ao criar índices: %v", err)
+	}
+
 	repo := mongodb.NewMovieRepository(collection)
 	jobs := mongodb.NewMovieJobRepository(jobsCollection)
 	svc := service.NewMovieService(repo, jobs)

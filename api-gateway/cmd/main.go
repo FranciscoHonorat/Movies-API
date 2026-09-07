@@ -7,6 +7,7 @@ import (
 	_ "github.com/FranciscoHonorat/movies/api-gateway/docs"
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/adapters/rabbitmq"
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/handlers"
+	"github.com/FranciscoHonorat/movies/api-gateway/internal/observability"
 	"github.com/FranciscoHonorat/movies/proto"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -41,10 +42,12 @@ func main() {
 	movieHandler := handlers.NewMovieHandler(client, newRabbitMQPublisher)
 
 	r := gin.Default()
+	r.Use(observability.GinMiddleware())
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.GET("/health", handlers.HealthHandler)
+	r.GET("/metrics", observability.Handler())
 
 	v1 := r.Group("/api/v1")
 

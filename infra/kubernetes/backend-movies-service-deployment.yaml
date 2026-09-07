@@ -2,13 +2,14 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: movies-service-deployment
+  namespace: re-api-books-dev
   labels:
     app: movies-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: movies-service  
+      app: movies-service
   template:
     metadata:
       labels:
@@ -17,13 +18,37 @@ spec:
       containers:
         - name: movies-service-container
           image: movies-service:latest
+          # `imagePullPolicy: Never` assumes a local cluster (kind/minikube)
+          # where the image is built and loaded locally — see
+          # infra/kubernetes/README.md. Point at a real registry and drop
+          # this to `IfNotPresent`/`Always` before deploying anywhere else.
           imagePullPolicy: Never
           ports:
             - containerPort: 50051
-          env:
-            - name: MONGO_URI
-              value: mongodb://root:password@mongo-service:27017/movies?authSource=admin
-            - name: GRPC_PORT
-              value: "50051"
-            - name: RABBITMQ_URI
-              value: amqp://guest:guest@rabbitmq-service:5672/
+          envFrom:
+            - configMapRef:
+                name: re-api-books-config
+            - secretRef:
+                name: re-api-books-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          # The service doesn't implement the standard gRPC health-checking
+          # protocol (grpc.health.v1.Health), so a real gRPC health probe
+          # isn't available without adding that to movies-service first
+          # (worth doing — see infra/README.md "Itens descobertos"). A plain
+          # TCP connect is a coarser but honest stand-in until then.
+          readinessProbe:
+            tcpSocket:
+              port: 50051
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 50051
+            initialDelaySeconds: 15
+            periodSeconds: 20

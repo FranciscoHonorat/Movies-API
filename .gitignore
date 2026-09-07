@@ -27,6 +27,25 @@ go.work.sum
 # env file
 .env
 
+# Raw vegeta attack dumps (binary, includes full response bodies — can get
+# large fast). The human-readable *-report.txt summaries in
+# docs/performance/raw/ are what's committed; regenerate the .bin locally
+# with the commands in docs/performance/README.md if you need to re-derive
+# a report.
+docs/performance/raw/*.bin
+
+# Kubernetes secrets filled in from infra/kubernetes/secrets.yaml.example —
+# never commit the real one, only the .example template.
+infra/kubernetes/secrets.yaml
+
+# Terraform local state and plan output — see infra/terraform/README.md.
+infra/terraform/.terraform/
+infra/terraform/.terraform.lock.hcl
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/*.tfplan
+infra/terraform/environments/prod.tfvars
+
 # Editor/IDE
 # .idea/
 # .vscode/

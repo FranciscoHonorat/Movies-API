@@ -1,0 +1,14 @@
+=== ingest-load: publicando 5000 filmes (concorrência 50) ===
+=== esvaziando a fila: consultando status até tudo terminar ou dar timeout ===
+
+=== ingest-load: n=5000 concurrency=50 ===
+
+-- Publish (POST /api/v1/movies -> 202) --
+Accepted: 5000/5000 (0 publish errors)
+Latencies: mean=10ms p50=6ms p95=31ms p99=55ms max=115ms
+
+-- End-to-end (POST enviado -> GetMovieStatus reporta completed) --
+Completed: 5000, Failed: 0, Timeout: 0
+Drain time (do primeiro POST ao último completed): 44.106s
+Throughput sustentado: 113.4 completions/s (completed / drain time)
+Latencies: mean=19.097s p50=8.154s p95=43.294s p99=43.425s max=43.515s

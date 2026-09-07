@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rabbitmq-deployment
+  namespace: re-api-books-dev
   labels:
     app: rabbitmq
 spec:
@@ -16,13 +17,31 @@ spec:
     spec:
       containers:
         - name: rabbitmq-container
+          # Public image on Docker Hub — pulled normally, unlike the
+          # movies-service/api-gateway images below. The pre-existing
+          # manifest had `imagePullPolicy: Never` here too, copy-pasted from
+          # the locally-built backend deployments; that would have made this
+          # pod stuck in ImagePullBackOff on any cluster that didn't happen
+          # to already have rabbitmq:3-management cached. Fixed.
           image: rabbitmq:3-management
-          imagePullPolicy: Never
           env:
             - name: RABBITMQ_DEFAULT_USER
-              value: guest
+              valueFrom:
+                secretKeyRef:
+                  name: re-api-books-secrets
+                  key: RABBITMQ_USER
             - name: RABBITMQ_DEFAULT_PASS
-              value: guest
+              valueFrom:
+                secretKeyRef:
+                  name: re-api-books-secrets
+                  key: RABBITMQ_PASSWORD
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           ports:
             - containerPort: 5672
             - containerPort: 15672

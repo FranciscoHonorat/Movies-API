@@ -1,0 +1,10 @@
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+29e30083c55f   movies-service             9.08%     21.52MiB / 22.75GiB   0.09%     7.75MB / 7.99MB   0B / 0B          11
+ede3b865f628   api-gateway                7.41%     38.29MiB / 22.75GiB   0.16%     6.49MB / 8.24MB   0B / 0B          14
+baec93b21a69   movies-rabbitmq            0.55%     169.4MiB / 22.75GiB   0.73%     83.3kB / 18.4kB   62.3MB / 672kB   40
+175a28434462   movies-mongo               581.99%   404.4MiB / 22.75GiB   1.74%     3.88MB / 5.45MB   258MB / 4.88MB   153
+7310c11b68af   hermes-ui                  0.00%     0B / 0B               0.00%     0B / 0B           0B / 0B          0
+de442cea43e5   hermes-collector           0.27%     18.52MiB / 22.75GiB   0.08%     8.25kB / 126B     0B / 0B          11
+acb0b84d13f5   hermes-api                 0.00%     0B / 0B               0.00%     0B / 0B           0B / 0B          0
+2185a6cef042   hermes-processor           0.00%     0B / 0B               0.00%     0B / 0B           0B / 0B          0
+42513ab6c0f5   terminalstudy-postgres-1   0.00%     49.72MiB / 22.75GiB   0.21%     404kB / 126B      31.5MB / 111kB   9

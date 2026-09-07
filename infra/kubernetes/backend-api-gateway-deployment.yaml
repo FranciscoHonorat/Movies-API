@@ -2,13 +2,14 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway-deployment
+  namespace: re-api-books-dev
   labels:
     app: api-gateway
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: api-gateway  
+      app: api-gateway
   template:
     metadata:
       labels:
@@ -20,12 +21,27 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 8080
-          env:
-            - name: GRPC_SERVER_URL
-              value: "movies-service:50051"
-            - name: HTTP_PORT
-              value: "8080"
-            - name: RABBITMQ_URI
-              value: amqp://guest:guest@rabbitmq-service:5672/
-            - name: GIN_MODE
-              value: "release"
+          envFrom:
+            - configMapRef:
+                name: re-api-books-config
+            - secretRef:
+                name: re-api-books-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20

@@ -1,0 +1,131 @@
+# Default-deny + explicit allow-lists, all built into Kubernetes core (no
+# service mesh, no paid add-on). Requires a CNI that enforces NetworkPolicy
+# — kind's default CNI (kindnet) does NOT; see infra/security/README.md for
+# how to create the local cluster with Calico instead so these actually take
+# effect rather than being silently ignored.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: re-api-books-dev
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+# api-gateway: reachable from the ingress controller, talks out to
+# movies-service (gRPC) and rabbitmq. DNS egress (port 53) is required by
+# every policy below or pods can't resolve Service names at all.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-gateway-policy
+  namespace: re-api-books-dev
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: {} # ingress-nginx runs in its own namespace
+      ports:
+        - port: 8080
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: movies-service
+      ports:
+        - port: 50051
+    - to:
+        - podSelector:
+            matchLabels:
+              app: rabbitmq
+      ports:
+        - port: 5672
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+# movies-service: reachable only from api-gateway, talks out to mongo and
+# rabbitmq.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: movies-service-policy
+  namespace: re-api-books-dev
+spec:
+  podSelector:
+    matchLabels:
+      app: movies-service
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - port: 50051
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: mongo
+      ports:
+        - port: 27017
+    - to:
+        - podSelector:
+            matchLabels:
+              app: rabbitmq
+      ports:
+        - port: 5672
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+# mongo: reachable only from movies-service.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mongo-policy
+  namespace: re-api-books-dev
+spec:
+  podSelector:
+    matchLabels:
+      app: mongo
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: movies-service
+      ports:
+        - port: 27017
+---
+# rabbitmq: reachable from both backends on the AMQP port; the management UI
+# (15672) is intentionally left unreachable from other pods — use
+# `kubectl port-forward` to reach it, don't expose it in-cluster.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rabbitmq-policy
+  namespace: re-api-books-dev
+spec:
+  podSelector:
+    matchLabels:
+      app: rabbitmq
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - podSelector:
+            matchLabels:
+              app: movies-service
+      ports:
+        - port: 5672

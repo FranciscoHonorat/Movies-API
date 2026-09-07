@@ -25,7 +25,7 @@ WORKDIR /app
 RUN apk --no-cache add ca-certificates
 
 COPY --from=builder /app/server .
-COPY --from=builder /app/movies-service/movies.json ./movies-service/movies.json
+COPY --from=builder /app/movies-service/movies.json ./movies.json
 
 EXPOSE 50051
 

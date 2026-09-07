@@ -36,6 +36,24 @@ func NewMovieRepository(collection *mongo.Collection) output.MovieRepository {
 	}
 }
 
+// EnsureIndexes creates the indexes ListMovies relies on for filtering and
+// sorting. Without them, `Find` with a `title`/`year` sort (the default —
+// see api-gateway's ListMovie handler) forces Mongo into a full collection
+// scan plus an in-memory sort on every request. Measured against the
+// ~28k-document seed dataset: unindexed, GET /movies collapses from
+// stable (p99 ~120ms) to a full outage (mean 3.7s, p99 6.9s, MongoDB
+// pegged at ~580% CPU) between 60 and 80 req/s — see
+// docs/performance/README.md. `CreateMany` is idempotent (creating an
+// index that already exists with the same spec is a no-op), so calling
+// this on every boot is safe.
+func EnsureIndexes(ctx context.Context, collection *mongo.Collection) error {
+	_, err := collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
+		{Keys: bson.D{{Key: "title", Value: 1}}},
+		{Keys: bson.D{{Key: "year", Value: 1}}},
+	})
+	return err
+}
+
 func ToDocument(movie *entity.MovieEntity) movieRepository {
 	return movieRepository{
 		Id:    movie.GetID(),

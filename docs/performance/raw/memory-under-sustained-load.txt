@@ -1,0 +1,72 @@
+--- t=1x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             15.39%    14.84MiB / 22.75GiB   0.06%     92.5MB / 90.2MB   0B / 0B          18
+ede3b865f628   api-gateway                10.29%    29.64MiB / 22.75GiB   0.13%     94MB / 109MB      0B / 0B          18
+baec93b21a69   movies-rabbitmq            0.11%     174.4MiB / 22.75GiB   0.75%     10.8MB / 9.88MB   62.3MB / 778kB   40
+175a28434462   movies-mongo               51.04%    450.3MiB / 22.75GiB   1.93%     69.8MB / 73.4MB   259MB / 72.7MB   152
+--- t=2x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             15.10%    14.37MiB / 22.75GiB   0.06%     94.7MB / 92MB     0B / 0B          18
+ede3b865f628   api-gateway                9.51%     33.26MiB / 22.75GiB   0.14%     95.6MB / 111MB    0B / 0B          18
+baec93b21a69   movies-rabbitmq            0.48%     174.2MiB / 22.75GiB   0.75%     10.8MB / 9.88MB   62.3MB / 778kB   40
+175a28434462   movies-mongo               7.27%     450.9MiB / 22.75GiB   1.94%     70.3MB / 75.1MB   259MB / 72.8MB   152
+--- t=3x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             14.42%    14.76MiB / 22.75GiB   0.06%     97.1MB / 93.8MB   0B / 0B          18
+ede3b865f628   api-gateway                9.55%     34.57MiB / 22.75GiB   0.15%     97.3MB / 114MB    0B / 0B          18
+baec93b21a69   movies-rabbitmq            0.11%     174.2MiB / 22.75GiB   0.75%     10.8MB / 9.89MB   62.3MB / 778kB   40
+175a28434462   movies-mongo               6.97%     450.4MiB / 22.75GiB   1.93%     70.8MB / 76.8MB   259MB / 72.8MB   152
+--- t=4x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             15.12%    14.57MiB / 22.75GiB   0.06%     99.4MB / 95.6MB   0B / 0B          18
+ede3b865f628   api-gateway                10.23%    34.38MiB / 22.75GiB   0.15%     99MB / 116MB      0B / 0B          18
+baec93b21a69   movies-rabbitmq            0.12%     174.2MiB / 22.75GiB   0.75%     10.8MB / 9.89MB   62.3MB / 778kB   40
+175a28434462   movies-mongo               22.72%    450.4MiB / 22.75GiB   1.93%     71.3MB / 78.5MB   259MB / 72.9MB   152
+--- t=5x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             14.55%    14.33MiB / 22.75GiB   0.06%     102MB / 97.3MB    0B / 0B          18
+ede3b865f628   api-gateway                9.79%     34.63MiB / 22.75GiB   0.15%     101MB / 118MB     0B / 0B          18
+baec93b21a69   movies-rabbitmq            1.35%     179.4MiB / 22.75GiB   0.77%     10.8MB / 9.89MB   62.3MB / 778kB   46
+175a28434462   movies-mongo               7.72%     450.1MiB / 22.75GiB   1.93%     71.8MB / 80.2MB   259MB / 72.9MB   152
+--- t=6x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             14.31%    14.11MiB / 22.75GiB   0.06%     104MB / 99.1MB    0B / 0B          18
+ede3b865f628   api-gateway                9.21%     34.8MiB / 22.75GiB    0.15%     102MB / 121MB     0B / 0B          18
+baec93b21a69   movies-rabbitmq            0.15%     174.4MiB / 22.75GiB   0.75%     10.8MB / 9.89MB   62.3MB / 778kB   40
+175a28434462   movies-mongo               7.00%     450.4MiB / 22.75GiB   1.93%     72.3MB / 81.9MB   259MB / 72.9MB   152
+--- t=7x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             14.72%    14.35MiB / 22.75GiB   0.06%     106MB / 101MB     0B / 0B          18
+ede3b865f628   api-gateway                9.53%     34.86MiB / 22.75GiB   0.15%     104MB / 123MB     0B / 0B          18
+baec93b21a69   movies-rabbitmq            0.19%     174.4MiB / 22.75GiB   0.75%     10.8MB / 9.89MB   62.3MB / 778kB   40
+175a28434462   movies-mongo               7.35%     450.1MiB / 22.75GiB   1.93%     72.8MB / 83.6MB   259MB / 72.9MB   152
+--- t=8x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             15.32%    14.12MiB / 22.75GiB   0.06%     109MB / 103MB     0B / 0B          18
+ede3b865f628   api-gateway                10.30%    34.65MiB / 22.75GiB   0.15%     106MB / 125MB     0B / 0B          18
+baec93b21a69   movies-rabbitmq            46.63%    221MiB / 22.75GiB     0.95%     10.8MB / 9.89MB   62.3MB / 778kB   74
+175a28434462   movies-mongo               8.17%     450.4MiB / 22.75GiB   1.93%     73.2MB / 85.3MB   259MB / 73MB     152
+--- t=9x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             18.29%    13.81MiB / 22.75GiB   0.06%     111MB / 104MB     0B / 0B          18
+ede3b865f628   api-gateway                12.03%    34.87MiB / 22.75GiB   0.15%     107MB / 127MB     0B / 0B          18
+baec93b21a69   movies-rabbitmq            0.33%     174.2MiB / 22.75GiB   0.75%     10.8MB / 9.89MB   62.3MB / 778kB   40
+175a28434462   movies-mongo               9.34%     450.4MiB / 22.75GiB   1.93%     73.7MB / 87MB     259MB / 73MB     152
+--- t=10x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             0.00%     13.39MiB / 22.75GiB   0.06%     111MB / 105MB     0B / 0B          18
+ede3b865f628   api-gateway                0.00%     33.43MiB / 22.75GiB   0.14%     108MB / 128MB     0B / 0B          18
+baec93b21a69   movies-rabbitmq            0.24%     174.2MiB / 22.75GiB   0.75%     10.8MB / 9.89MB   62.3MB / 778kB   40
+175a28434462   movies-mongo               0.42%     450.5MiB / 22.75GiB   1.93%     73.8MB / 87.3MB   259MB / 73MB     152
+--- t=11x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             0.00%     12.91MiB / 22.75GiB   0.06%     111MB / 105MB     0B / 0B          18
+ede3b865f628   api-gateway                0.05%     33.67MiB / 22.75GiB   0.14%     108MB / 128MB     0B / 0B          18
+baec93b21a69   movies-rabbitmq            128.85%   232MiB / 22.75GiB     1.00%     10.8MB / 9.89MB   62.3MB / 778kB   74
+175a28434462   movies-mongo               0.44%     450.6MiB / 22.75GiB   1.93%     73.8MB / 87.3MB   259MB / 73.2MB   152
+--- t=12x5s ---
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+7a4822ba0da2   movies-service             0.11%     13.16MiB / 22.75GiB   0.06%     111MB / 105MB     0B / 0B          18
+ede3b865f628   api-gateway                0.00%     33.43MiB / 22.75GiB   0.14%     108MB / 128MB     0B / 0B          18
+baec93b21a69   movies-rabbitmq            0.22%     174.9MiB / 22.75GiB   0.75%     10.8MB / 9.89MB   62.3MB / 778kB   40
+175a28434462   movies-mongo               0.45%     450.6MiB / 22.75GiB   1.93%     73.8MB / 87.3MB   259MB / 73.2MB   152

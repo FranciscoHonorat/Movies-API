@@ -1,0 +1,25 @@
+# Requires an ingress controller — install once per cluster with e.g.:
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.13.0/deploy/static/provider/kind/deploy.yaml
+# (ingress-nginx is free/OSS; the "kind" provider manifest is the right one
+# for a local kind cluster — swap for the "cloud" provider manifest only if
+# this is ever pointed at a real cloud load balancer, which costs money).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-gateway-ingress
+  namespace: re-api-books-dev
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: re-api-books.local
+      http:
+        paths:
+          - path: /(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-gateway-service
+                port:
+                  number: 8080

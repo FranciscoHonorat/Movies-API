@@ -1,0 +1,11 @@
+=== ingest-load: publicando 20000 filmes (concorrência 200) ===
+
+=== ingest-load: n=20000 concurrency=200 ===
+
+-- Publish (POST /api/v1/movies -> 202) --
+Accepted: 20000/20000 (0 publish errors)
+Latencies: mean=22ms p50=20ms p95=49ms p99=69ms max=115ms
+
+-- End-to-end (POST enviado -> GetMovieStatus reporta completed) --
+Completed: 0, Failed: 0, Timeout: 0
+Latencies: (nenhuma amostra)

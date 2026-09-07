@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mongo-service
+  namespace: re-api-books-dev
   labels:
     app: mongo
 spec:

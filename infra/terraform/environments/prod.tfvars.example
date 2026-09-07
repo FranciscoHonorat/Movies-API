@@ -1,0 +1,20 @@
+# ⚠️  ISSO APONTA PARA AWS DE VERDADE E GERA CUSTO REAL.
+#
+# Este projeto é de estudo — o fluxo padrão (environments/local.tfvars) usa
+# LocalStack e nunca cobra nada. Só copie este arquivo para prod.tfvars
+# (já no .gitignore — nunca commite valores reais aqui) e rode
+# `terraform apply -var-file=environments/prod.tfvars` se você
+# deliberadamente quiser provisionar recursos reais na AWS e está ciente de
+# que isso custa dinheiro (VPC é grátis; nada mais neste diretório é caro
+# por si só — bucket S3 e log group do CloudWatch são centavos — mas ainda
+# assim é cobrança real, diferente de tudo mais neste projeto).
+#
+# Credenciais reais da AWS NÃO vêm daqui — configure via
+# `aws configure` / variáveis de ambiente (AWS_ACCESS_KEY_ID etc.), nunca em
+# um arquivo .tfvars.
+
+project_name        = "re-api-books"
+environment         = "prod"
+aws_region          = "us-east-1"
+use_localstack      = false
+mongo_backup_retention_days = 30

@@ -1,0 +1,93 @@
+# Vanilla Prometheus (no prometheus-operator/CRDs — that's a heavier
+# dependency than a 2-service study project needs). This ConfigMap is the
+# single source of truth for scrape config and alert rules — see
+# infra/monitoring/README.md for why it isn't duplicated as standalone
+# files elsewhere in infra/monitoring/.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: re-api-books-dev
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    rule_files:
+      - /etc/prometheus/alerts.yml
+
+    scrape_configs:
+      - job_name: api-gateway
+        static_configs:
+          - targets: ["api-gateway-service:8080"]
+        metrics_path: /metrics
+
+      # movies-service exposes gRPC only today, no /metrics endpoint yet —
+      # left commented until that's added (see infra/README.md "Itens
+      # descobertos").
+      # - job_name: movies-service
+      #   static_configs:
+      #     - targets: ["movies-service:50051"]
+
+  alerts.yml: |
+    groups:
+      - name: re-api-books
+        rules:
+          - alert: ApiGatewayDown
+            expr: up{job="api-gateway"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "api-gateway não responde a scrape do Prometheus há 2 minutos"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: re-api-books-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v3.1.0
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+          ports:
+            - containerPort: 9090
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+  namespace: re-api-books-dev
+spec:
+  type: ClusterIP
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090

@@ -1,0 +1,19 @@
+# Non-secret configuration, shared by both backend deployments. Mirrors the
+# variable names already used in docker-compose.yml and cmd/main.go's
+# os.Getenv calls, so moving between docker-compose and Kubernetes doesn't
+# change any application code.
+#
+# MONGO_URI and RABBITMQ_URI are NOT here even though they're plain env vars
+# in docker-compose.yml — as connection strings they embed credentials, so
+# they belong in secrets.yaml.example instead (see that file's header).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: re-api-books-config
+data:
+  # movies-service
+  GRPC_PORT: "50051"
+  # api-gateway
+  HTTP_PORT: "8080"
+  GRPC_SERVER_URL: "movies-service:50051"
+  GIN_MODE: "release"
