@@ -1,4 +1,4 @@
-# re-api-books
+# Movies-API
 
 ![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
