@@ -19,6 +19,8 @@ import (
 	"syscall"
 	"time"
 
+	hermes "github.com/FranciscoHonorat/hermes-observability/packages/agent-go"
+	"github.com/FranciscoHonorat/hermes-observability/packages/agent-go/grpcmetrics"
 	"github.com/FranciscoHonorat/movies/proto"
 	"github.com/FranciscoHonorat/movies/shared"
 	"github.com/rabbitmq/amqp091-go"
@@ -49,6 +51,10 @@ func main() {
 			slog.Error("erro ao encerrar tracing", "error", err)
 		}
 	}()
+
+	hermesAgent := hermes.NewClient() // reads HERMES_* env vars, see docker-compose.yml
+	hermesAgent.Start()
+	defer hermesAgent.Stop()
 
 	mongoURI := os.Getenv("MONGO_URI")
 	if mongoURI == "" {
@@ -168,7 +174,10 @@ func main() {
 		log.Fatalf("Erro ao abrir porta TCP: %v", err)
 	}
 
-	grpcSrv := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	grpcSrv := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		grpc.ChainUnaryInterceptor(grpcmetrics.UnaryServerInterceptor(hermesAgent)),
+	)
 	proto.RegisterMovieServiceServer(grpcSrv, grpcserver.NewServer(svc))
 
 	go func() {

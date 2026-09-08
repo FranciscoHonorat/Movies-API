@@ -61,6 +61,8 @@ services:
     build:
       context: .
       dockerfile: movies-service/Dockerfile
+      additional_contexts:
+        hermes-agent-go: /mnt/novovolume/arquivos/hermes-observability/packages/agent-go
     container_name: movies-service
     ports:
       - "${MOVIES_GRPC_PORT}:${MOVIES_GRPC_PORT}"
@@ -70,6 +72,11 @@ services:
       RABBITMQ_URI: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:${RABBITMQ_PORT}/
       CONSUMER_WORKERS: "${CONSUMER_WORKERS:-4}"
       OTEL_EXPORTER_OTLP_ENDPOINT: jaeger:4317
+      HERMES_COLLECTOR_URL: ${HERMES_COLLECTOR_URL:-http://host.docker.internal:4000}
+      HERMES_SERVICE_NAME: movies-service
+      HERMES_API_KEY: ${HERMES_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       mongo:
         condition: service_healthy
@@ -86,6 +93,8 @@ services:
     build:
       context: .
       dockerfile: api-gateway/Dockerfile
+      additional_contexts:
+        hermes-agent-go: /mnt/novovolume/arquivos/hermes-observability/packages/agent-go
     container_name: api-gateway
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
@@ -95,6 +104,11 @@ services:
       RABBITMQ_URI: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:${RABBITMQ_PORT}/
       GIN_MODE: release
       OTEL_EXPORTER_OTLP_ENDPOINT: jaeger:4317
+      HERMES_COLLECTOR_URL: ${HERMES_COLLECTOR_URL:-http://host.docker.internal:4000}
+      HERMES_SERVICE_NAME: api-gateway
+      HERMES_API_KEY: ${HERMES_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       movies-service:
         condition: service_started

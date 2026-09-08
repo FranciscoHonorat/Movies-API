@@ -16,6 +16,7 @@ import (
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/observability"
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/resilience"
 	"github.com/FranciscoHonorat/movies/proto"
+	hermes "github.com/FranciscoHonorat/hermes-observability/packages/agent-go"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -53,6 +54,10 @@ func main() {
 		}
 	}()
 
+	hermesAgent := hermes.NewClient() // reads HERMES_* env vars, see docker-compose.yml
+	hermesAgent.Start()
+	defer hermesAgent.Stop()
+
 	conn, err := grpc.NewClient(
 		os.Getenv("GRPC_SERVER_URL"),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -73,6 +78,7 @@ func main() {
 	r := gin.Default()
 	r.Use(otelgin.Middleware("api-gateway"))
 	r.Use(observability.GinMiddleware())
+	r.Use(observability.HermesGinMiddleware(hermesAgent))
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
