@@ -134,9 +134,24 @@ cd docs/performance/tools/ingest-load && go run . -url http://localhost:8080 -n 
 
 `api-gateway` expõe métricas Prometheus em `/metrics` (contagem e latência
 por rota, sem cardinalidade não-limitada — usa o padrão de rota do Gin,
-não a URL crua). `movies-service` ainda não expõe métricas (só fala gRPC
-hoje). Stack completo de Prometheus + Grafana rodando em Kubernetes local:
-ver `infra/kubernetes/monitoring/`.
+não a URL crua). Stack completo de Prometheus + Grafana rodando em
+Kubernetes local: ver `infra/kubernetes/monitoring/`.
+
+Além disso, os dois serviços empurram métricas para o
+[Hermes](https://github.com/FranciscoHonorat/hermes-observability), uma
+plataforma de observabilidade própria — modelo push, sem precisar de um
+endpoint `/metrics` novo. É assim que `movies-service` (que só fala gRPC,
+sem listener HTTP) tem métricas pela primeira vez:
+`grpc_requests_total` / `grpc_request_duration_ms` / `grpc_errors_total`
+via um interceptor gRPC dedicado (`packages/agent-go/grpcmetrics`).
+`api-gateway` reporta ao Hermes em paralelo ao Prometheus —
+`http_requests_total` / `http_request_duration_ms` / `http_errors_total`
+— sem substituir nada do que já existia. Hermes cobre só métricas; trace
+continua exclusivamente no Jaeger, para não duplicar spans. Detalhes,
+inclusive por que o cliente Go do Hermes isola a dependência do gRPC num
+módulo Go separado e como os containers alcançam o Collector do Hermes
+(que roda numa stack Docker à parte) em
+[`docs/adr/0008-*.md`](docs/adr/0008-metricas-hermes-alem-do-prometheus.md).
 
 ## Trace distribuído
 
@@ -187,7 +202,7 @@ por trás de cada decisão não-óbvia mora em `docs/`:
 
 - **`docs/adr/`** — Architecture Decision Records: o que foi decidido, as
   alternativas consideradas e por que foram descartadas, numeradas em
-  ordem cronológica (0001 a 0007 até agora).
+  ordem cronológica (0001 a 0008 até agora).
 - **`docs/learning/`** — lições generalizáveis tiradas ao longo do
   caminho (não específicas deste projeto), com referências bibliográficas
   quando aplicável — ex.: por que uma tag de struct mal formatada pode ser
