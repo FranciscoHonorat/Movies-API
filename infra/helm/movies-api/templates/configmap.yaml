@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "movies-api.fullname" . }}-config
+  labels:
+    {{- include "movies-api.labels" . | nindent 4 }}
+data:
+  # movies-service
+  GRPC_PORT: {{ .Values.moviesService.port | quote }}
+  CONSUMER_WORKERS: {{ .Values.moviesService.consumerWorkers | quote }}
+  # api-gateway
+  HTTP_PORT: {{ .Values.apiGateway.port | quote }}
+  GRPC_SERVER_URL: {{ printf "%s:%v" (include "movies-api.name" (list . "movies-service")) .Values.moviesService.port | quote }}
+  GIN_MODE: {{ .Values.apiGateway.ginMode | quote }}
+  # compartilhado
+  {{- if .Values.jaeger.enabled }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ printf "%s:%v" (include "movies-api.name" (list . "jaeger")) .Values.jaeger.otlpGrpcPort | quote }}
+  {{- end }}
+  HERMES_COLLECTOR_URL: {{ .Values.hermes.collectorUrl | quote }}

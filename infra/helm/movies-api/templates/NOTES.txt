@@ -1,0 +1,14 @@
+Movies API instalado no namespace {{ .Release.Namespace }}.
+
+Acessar o api-gateway:
+{{- if .Values.ingress.enabled }}
+  curl http://{{ .Values.ingress.host }}/health
+{{- else }}
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "movies-api.name" (list . "api-gateway") }} {{ .Values.apiGateway.port }}
+  curl http://localhost:{{ .Values.apiGateway.port }}/health
+{{- end }}
+{{- if .Values.jaeger.enabled }}
+
+Jaeger UI:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "movies-api.name" (list . "jaeger") }} {{ .Values.jaeger.uiPort }}
+{{- end }}

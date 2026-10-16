@@ -1,0 +1,16 @@
+movies-mongo 191.08% 160.8MiB / 22.75GiB
+movies-service 130.79% 30.57MiB / 22.75GiB
+api-gateway 98.73% 147.8MiB / 22.75GiB
+movies-rabbitmq 0.46% 154.6MiB / 22.75GiB
+movies-mongo 248.89% 166.8MiB / 22.75GiB
+movies-service 108.18% 65.6MiB / 22.75GiB
+api-gateway 87.30% 179.6MiB / 22.75GiB
+movies-rabbitmq 67.19% 154.4MiB / 22.75GiB
+movies-mongo 110.34% 160.7MiB / 22.75GiB
+movies-service 52.33% 134.3MiB / 22.75GiB
+api-gateway 97.35% 206.1MiB / 22.75GiB
+movies-rabbitmq 0.15% 154.2MiB / 22.75GiB
+movies-mongo 83.20% 366MiB / 22.75GiB
+movies-service 5.33% 135.5MiB / 22.75GiB
+api-gateway 61.41% 152.6MiB / 22.75GiB
+movies-rabbitmq 0.13% 152.4MiB / 22.75GiB

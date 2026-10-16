@@ -1,0 +1,5 @@
+[t=6s] FALHA: docker kill -s KILL movies-service
+[t=9s] VOLTA: docker start movies-service
+req=20000 ok=100.00% codes={'202': 20000} p50=0.82ms p99=25.5ms max=100ms
+filmes: 17155
+jobs: [{"_id":"completed","n":60274}]

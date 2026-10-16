@@ -1,0 +1,47 @@
+{{- if .Values.jaeger.enabled }}
+{{- $name := include "movies-api.name" (list . "jaeger") }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "movies-api.labels" . | nindent 4 }}
+    app.kubernetes.io/component: jaeger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "movies-api.selector" (list . "jaeger") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "movies-api.labels" . | nindent 8 }}
+        app.kubernetes.io/component: jaeger
+    spec:
+      containers:
+        - name: jaeger
+          image: {{ .Values.jaeger.image }}
+          env:
+            - name: COLLECTOR_OTLP_ENABLED
+              value: "true"
+          ports:
+            - name: ui
+              containerPort: {{ .Values.jaeger.uiPort }}
+            - name: otlp-grpc
+              containerPort: {{ .Values.jaeger.otlpGrpcPort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "movies-api.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "movies-api.selector" (list . "jaeger") | nindent 4 }}
+  ports:
+    - name: ui
+      port: {{ .Values.jaeger.uiPort }}
+    - name: otlp-grpc
+      port: {{ .Values.jaeger.otlpGrpcPort }}
+{{- end }}

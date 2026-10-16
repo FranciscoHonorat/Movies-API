@@ -1,0 +1,1 @@
+soak-mix-500           rate=  500 req=150000 thr=500/s ok=100.00% mean=2.40ms p50=1.66ms p95=6.27ms p99=12.12ms max=182.70ms codes={'200': 150000} cpu_peak={'movies-mongo': 137, 'movies-service': 54, 'api-gateway': 46, 'movies-rabbitmq': 240}

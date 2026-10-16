@@ -1,0 +1,74 @@
+goos: linux
+goarch: amd64
+pkg: movies-service/internal/core/domain/entity
+cpu: 11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz
+BenchmarkNewMovieEntity-8            	 9219330	       138.6 ns/op	      80 B/op	       3 allocs/op
+BenchmarkNewMovieEntity-8            	 9325461	       136.6 ns/op	      80 B/op	       3 allocs/op
+BenchmarkNewMovieEntity-8            	 8795473	       133.2 ns/op	      80 B/op	       3 allocs/op
+BenchmarkNewMovieEntity-8            	 8237973	       137.9 ns/op	      80 B/op	       3 allocs/op
+BenchmarkNewMovieEntity-8            	 9104143	       138.3 ns/op	      80 B/op	       3 allocs/op
+BenchmarkNewMovieEntityForCreate-8   	 8443390	       136.5 ns/op	      80 B/op	       3 allocs/op
+BenchmarkNewMovieEntityForCreate-8   	 8334154	       147.6 ns/op	      80 B/op	       3 allocs/op
+BenchmarkNewMovieEntityForCreate-8   	 8733072	       171.4 ns/op	      80 B/op	       3 allocs/op
+BenchmarkNewMovieEntityForCreate-8   	 8011466	       143.6 ns/op	      80 B/op	       3 allocs/op
+BenchmarkNewMovieEntityForCreate-8   	 8929470	       135.0 ns/op	      80 B/op	       3 allocs/op
+PASS
+ok  	movies-service/internal/core/domain/entity	12.368s
+?   	movies-service/internal/core/domain/err-d	[no test files]
+goos: linux
+goarch: amd64
+pkg: movies-service/internal/core/domain/valueobjects
+cpu: 11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz
+BenchmarkNewMovieTitle-8   	58213804	        23.51 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNewMovieTitle-8   	46272331	        24.08 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNewMovieTitle-8   	55822027	        23.66 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNewMovieTitle-8   	50828271	        22.67 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNewMovieTitle-8   	48743088	        22.81 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNewMovieYear-8    	13523743	        84.74 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNewMovieYear-8    	15166753	        97.36 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNewMovieYear-8    	16155757	        82.90 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNewMovieYear-8    	14936041	        85.33 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNewMovieYear-8    	14451532	        84.25 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNewMovieID-8      	1000000000	         1.036 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNewMovieID-8      	1000000000	         1.007 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNewMovieID-8      	1000000000	         1.061 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNewMovieID-8      	700860330	         1.676 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNewMovieID-8      	841966932	         1.519 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	movies-service/internal/core/domain/valueobjects	18.091s
+?   	movies-service/internal/core/port/input	[no test files]
+?   	movies-service/internal/core/port/output	[no test files]
+PASS
+ok  	movies-service/internal/core/service	0.004s
+goos: linux
+goarch: amd64
+pkg: github.com/FranciscoHonorat/movies/api-gateway/internal/handlers
+cpu: 11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz
+BenchmarkCreateMovieHandler-8   	   74317	     15544 ns/op	    7979 B/op	      46 allocs/op
+BenchmarkCreateMovieHandler-8   	   86085	     14083 ns/op	    7979 B/op	      46 allocs/op
+BenchmarkCreateMovieHandler-8   	   92694	     12682 ns/op	    7982 B/op	      46 allocs/op
+BenchmarkCreateMovieHandler-8   	   85263	     12594 ns/op	    7980 B/op	      46 allocs/op
+BenchmarkCreateMovieHandler-8   	  100312	     13803 ns/op	    7979 B/op	      46 allocs/op
+PASS
+ok  	github.com/FranciscoHonorat/movies/api-gateway/internal/handlers	6.017s
+goos: linux
+goarch: amd64
+pkg: github.com/FranciscoHonorat/movies/api-gateway/internal/resilience
+cpu: 11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz
+BenchmarkRetry_SuccessFirstTry-8   	172806348	         6.597 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRetry_SuccessFirstTry-8   	311198322	         5.110 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRetry_SuccessFirstTry-8   	318815449	         5.597 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRetry_SuccessFirstTry-8   	175227448	         6.183 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRetry_SuccessFirstTry-8   	186551420	         6.543 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIsRetryableGRPC-8         	30495454	        40.86 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIsRetryableGRPC-8         	26320336	        47.09 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIsRetryableGRPC-8         	29907988	        40.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIsRetryableGRPC-8         	29147860	        45.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIsRetryableGRPC-8         	32197287	        33.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkClient_GetMovie-8         	 1192190	       975.2 ns/op	     400 B/op	       6 allocs/op
+BenchmarkClient_GetMovie-8         	 1325552	       904.5 ns/op	     400 B/op	       6 allocs/op
+BenchmarkClient_GetMovie-8         	 1313895	       928.6 ns/op	     400 B/op	       6 allocs/op
+BenchmarkClient_GetMovie-8         	 1287418	       940.5 ns/op	     400 B/op	       6 allocs/op
+BenchmarkClient_GetMovie-8         	 1306532	       919.7 ns/op	     400 B/op	       6 allocs/op
+PASS
+ok  	github.com/FranciscoHonorat/movies/api-gateway/internal/resilience	18.908s

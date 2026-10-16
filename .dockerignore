@@ -22,3 +22,6 @@ node_modules/
 .env
 .env.local
 .env.*.local
+
+# Checkout do Hermes feito pelo CI (.github/actions/setup-workspace)
+.hermes/

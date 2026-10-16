@@ -39,17 +39,16 @@ docs/performance/tools/direct-publish/direct-publish
 # a report.
 docs/performance/raw/*.bin
 
-# Kubernetes secrets filled in from infra/kubernetes/secrets.yaml.example —
-# never commit the real one, only the .example template.
-infra/kubernetes/secrets.yaml
+# OpenTofu (infra/tofu): estado local, cache de providers e variáveis
+# reais. O .terraform.lock.hcl É versionado (fixa as versões dos providers).
+infra/tofu/.terraform/
+infra/tofu/*.tfstate
+infra/tofu/*.tfstate.*
+infra/tofu/terraform.tfvars
+infra/tofu/*.tfplan
 
-# Terraform local state and plan output — see infra/terraform/README.md.
-infra/terraform/.terraform/
-infra/terraform/.terraform.lock.hcl
-infra/terraform/*.tfstate
-infra/terraform/*.tfstate.*
-infra/terraform/*.tfplan
-infra/terraform/environments/prod.tfvars
+# Checkout do Hermes feito pelo CI (.github/actions/setup-workspace)
+.hermes/
 
 # Editor/IDE
 # .idea/

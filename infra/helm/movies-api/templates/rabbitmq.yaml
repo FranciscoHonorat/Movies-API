@@ -1,0 +1,57 @@
+{{- if .Values.rabbitmq.enabled }}
+{{- $name := include "movies-api.name" (list . "rabbitmq") }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "movies-api.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "movies-api.selector" (list . "rabbitmq") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "movies-api.labels" . | nindent 8 }}
+        app.kubernetes.io/component: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: {{ .Values.rabbitmq.image }}
+          ports:
+            - name: amqp
+              containerPort: {{ .Values.rabbitmq.port }}
+            - name: management
+              containerPort: {{ .Values.rabbitmq.managementPort }}
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef: { name: {{ include "movies-api.fullname" . }}-secrets, key: RABBITMQ_USER }
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef: { name: {{ include "movies-api.fullname" . }}-secrets, key: RABBITMQ_PASSWORD }
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "movies-api.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "movies-api.selector" (list . "rabbitmq") | nindent 4 }}
+  ports:
+    - name: amqp
+      port: {{ .Values.rabbitmq.port }}
+    - name: management
+      port: {{ .Values.rabbitmq.managementPort }}
+{{- end }}

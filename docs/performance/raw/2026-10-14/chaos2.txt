@@ -1,0 +1,3 @@
+[t=10s] FALHA: docker pause movies-mongo
+[t=25s] VOLTA: docker unpause movies-mongo
+req=10000 ok=66.94% codes={'200': 6694, '500': 3306} p50=1.15ms p99=340.0ms max=552ms

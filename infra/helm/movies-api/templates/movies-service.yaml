@@ -1,0 +1,64 @@
+{{- if .Values.moviesService.enabled }}
+{{- $name := include "movies-api.name" (list . "movies-service") }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "movies-api.labels" . | nindent 4 }}
+    app.kubernetes.io/component: movies-service
+spec:
+  replicas: {{ .Values.moviesService.replicas }}
+  selector:
+    matchLabels:
+      {{- include "movies-api.selector" (list . "movies-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "movies-api.labels" . | nindent 8 }}
+        app.kubernetes.io/component: movies-service
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: movies-service
+          image: {{ include "movies-api.image" (list . .Values.moviesService.image) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.moviesService.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "movies-api.fullname" . }}-config
+            - secretRef:
+                name: {{ include "movies-api.fullname" . }}-secrets
+          env:
+            - name: HERMES_SERVICE_NAME
+              value: movies-service
+          resources:
+            {{- toYaml .Values.moviesService.resources | nindent 12 }}
+          # O serviço não implementa grpc.health.v1, então usamos TCP.
+          readinessProbe:
+            tcpSocket: { port: grpc }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: grpc }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "movies-api.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "movies-api.selector" (list . "movies-service") | nindent 4 }}
+  ports:
+    - name: grpc
+      port: {{ .Values.moviesService.port }}
+      targetPort: grpc
+{{- end }}

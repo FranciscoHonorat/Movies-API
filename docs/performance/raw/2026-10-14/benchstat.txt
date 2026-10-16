@@ -1,0 +1,94 @@
+goos: linux
+goarch: amd64
+pkg: github.com/FranciscoHonorat/movies/api-gateway/internal/handlers
+cpu: 11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz
+                     │  bench.txt   │
+                     │    sec/op    │
+CreateMovieHandler-8   13.80µ ± ∞ ¹
+¹ need >= 6 samples for confidence interval at level 0.95
+
+                     │   bench.txt   │
+                     │     B/op      │
+CreateMovieHandler-8   7.792Ki ± ∞ ¹
+¹ need >= 6 samples for confidence interval at level 0.95
+
+                     │  bench.txt  │
+                     │  allocs/op  │
+CreateMovieHandler-8   46.00 ± ∞ ¹
+¹ need >= 6 samples for confidence interval at level 0.95
+
+pkg: github.com/FranciscoHonorat/movies/api-gateway/internal/resilience
+                        │  bench.txt   │
+                        │    sec/op    │
+Retry_SuccessFirstTry-8   6.183n ± ∞ ¹
+IsRetryableGRPC-8         40.86n ± ∞ ¹
+Client_GetMovie-8         928.6n ± ∞ ¹
+geomean                   61.67n
+¹ need >= 6 samples for confidence interval at level 0.95
+
+                        │  bench.txt  │
+                        │    B/op     │
+Retry_SuccessFirstTry-8   0.000 ± ∞ ¹
+IsRetryableGRPC-8         0.000 ± ∞ ¹
+Client_GetMovie-8         400.0 ± ∞ ¹
+geomean                             ²
+¹ need >= 6 samples for confidence interval at level 0.95
+² summaries must be >0 to compute geomean
+
+                        │  bench.txt  │
+                        │  allocs/op  │
+Retry_SuccessFirstTry-8   0.000 ± ∞ ¹
+IsRetryableGRPC-8         0.000 ± ∞ ¹
+Client_GetMovie-8         6.000 ± ∞ ¹
+geomean                             ²
+¹ need >= 6 samples for confidence interval at level 0.95
+² summaries must be >0 to compute geomean
+
+pkg: movies-service/internal/core/domain/entity
+                          │  bench.txt   │
+                          │    sec/op    │
+NewMovieEntity-8            137.9n ± ∞ ¹
+NewMovieEntityForCreate-8   143.6n ± ∞ ¹
+geomean                     140.7n
+¹ need >= 6 samples for confidence interval at level 0.95
+
+                          │  bench.txt  │
+                          │    B/op     │
+NewMovieEntity-8            80.00 ± ∞ ¹
+NewMovieEntityForCreate-8   80.00 ± ∞ ¹
+geomean                     80.00
+¹ need >= 6 samples for confidence interval at level 0.95
+
+                          │  bench.txt  │
+                          │  allocs/op  │
+NewMovieEntity-8            3.000 ± ∞ ¹
+NewMovieEntityForCreate-8   3.000 ± ∞ ¹
+geomean                     3.000
+¹ need >= 6 samples for confidence interval at level 0.95
+
+pkg: movies-service/internal/core/domain/valueobjects
+                │  bench.txt   │
+                │    sec/op    │
+NewMovieTitle-8   23.51n ± ∞ ¹
+NewMovieYear-8    84.74n ± ∞ ¹
+NewMovieID-8      1.061n ± ∞ ¹
+geomean           12.83n
+¹ need >= 6 samples for confidence interval at level 0.95
+
+                │  bench.txt  │
+                │    B/op     │
+NewMovieTitle-8   16.00 ± ∞ ¹
+NewMovieYear-8    16.00 ± ∞ ¹
+NewMovieID-8      0.000 ± ∞ ¹
+geomean                     ²
+¹ need >= 6 samples for confidence interval at level 0.95
+² summaries must be >0 to compute geomean
+
+                │  bench.txt  │
+                │  allocs/op  │
+NewMovieTitle-8   1.000 ± ∞ ¹
+NewMovieYear-8    1.000 ± ∞ ¹
+NewMovieID-8      0.000 ± ∞ ¹
+geomean                     ²
+¹ need >= 6 samples for confidence interval at level 0.95
+² summaries must be >0 to compute geomean

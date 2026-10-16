@@ -13,6 +13,7 @@ import (
 	_ "github.com/FranciscoHonorat/movies/api-gateway/docs"
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/adapters/rabbitmq"
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/handlers"
+	"github.com/FranciscoHonorat/movies/api-gateway/internal/middleware"
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/observability"
 	"github.com/FranciscoHonorat/movies/api-gateway/internal/resilience"
 	"github.com/FranciscoHonorat/movies/proto"
@@ -76,6 +77,7 @@ func main() {
 	movieHandler := handlers.NewMovieHandler(client, publisher)
 
 	r := gin.Default()
+	r.Use(middleware.CORS())
 	r.Use(otelgin.Middleware("api-gateway"))
 	r.Use(observability.GinMiddleware())
 	r.Use(observability.HermesGinMiddleware(hermesAgent))

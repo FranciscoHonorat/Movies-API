@@ -1,0 +1,35 @@
+name: Setup workspace
+description: >
+  Prepara o que o repositório não versiona: o go.work (está no .gitignore)
+  e o Hermes agent-go no caminho absoluto usado pelos `replace` dos go.mod.
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout Hermes agent-go
+      uses: actions/checkout@v7
+      with:
+        repository: FranciscoHonorat/Hermes-Observability-Platform
+        path: .hermes
+        sparse-checkout: packages/agent-go
+
+    - name: Linkar Hermes no caminho do replace
+      shell: bash
+      run: |
+        sudo mkdir -p /mnt/novovolume/arquivos/hermes-observability
+        sudo ln -sfn "$GITHUB_WORKSPACE/.hermes/packages" /mnt/novovolume/arquivos/hermes-observability/packages
+
+    - name: Gerar go.work
+      shell: bash
+      run: |
+        cat > go.work <<'GOWORK'
+        go 1.26.4
+
+        use (
+        	./api-gateway
+        	./movies-service
+        	./proto
+        	./shared
+        )
+        GOWORK
+        touch go.work.sum

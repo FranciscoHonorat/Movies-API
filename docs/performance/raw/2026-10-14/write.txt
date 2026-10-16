@@ -1,0 +1,3 @@
+write-post-500         rate=  500 req= 10000 thr=500/s ok=100.00% mean=0.73ms p50=0.56ms p95=1.64ms p99=3.77ms max=19.22ms codes={'202': 10000} cpu_peak={'movies-mongo': 103, 'movies-service': 57, 'api-gateway': 26, 'movies-rabbitmq': 19}
+write-post-2000        rate= 2000 req= 30000 thr=2000/s ok=100.00% mean=7.97ms p50=1.53ms p95=42.82ms p99=138.46ms max=242.47ms codes={'202': 30000} cpu_peak={'movies-mongo': 176, 'movies-service': 129, 'api-gateway': 83, 'movies-rabbitmq': 143}
+write-delete-500       rate=  500 req= 10000 thr=500/s ok=100.00% mean=1.29ms p50=1.12ms p95=2.46ms p99=5.18ms max=17.44ms codes={'204': 10000} cpu_peak={'movies-mongo': 36, 'movies-service': 38, 'api-gateway': 35, 'movies-rabbitmq': 55}

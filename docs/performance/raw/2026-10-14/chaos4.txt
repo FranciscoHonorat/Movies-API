@@ -1,0 +1,3 @@
+[t=10s] FALHA: docker stop movies-rabbitmq
+[t=30s] VOLTA: docker start movies-rabbitmq
+req=6000 ok=49.87% codes={'202': 2992, '500': 3008} p50=0.52ms p99=2.6ms max=55ms

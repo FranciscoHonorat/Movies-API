@@ -1,0 +1,3 @@
+[t=10s] FALHA: docker run --rm --net container:movies-mongo --cap-add NET_ADMIN nicolaka/netshoot:v0.13 tc qdisc add dev eth0 root netem delay 250ms
+[t=30s] VOLTA: docker run --rm --net container:movies-mongo --cap-add NET_ADMIN nicolaka/netshoot:v0.13 tc qdisc del dev eth0 root
+req=10000 ok=54.30% codes={'200': 5430, '500': 4570} p50=0.86ms p99=539.9ms max=1092ms

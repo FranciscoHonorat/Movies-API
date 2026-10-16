@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.26.4"
+
+jobs:
+  lint:
+    name: Lint (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [api-gateway, movies-service, proto, shared]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.14
+          working-directory: ${{ matrix.module }}
+          args: --config=${{ github.workspace }}/.golangci.yml
+
+  test:
+    name: Test (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [api-gateway, movies-service]
+    # Os testes de integração do movies-service (mongodb/seed) usam um
+    # MongoDB real em localhost:27017 (ADR 0001/0002).
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+      - name: Build
+        working-directory: ${{ matrix.module }}
+        run: go build ./...
+      - name: Test
+        working-directory: ${{ matrix.module }}
+        # -p 1: mongodb e seed compartilham o banco "testdb" (ADR 0001).
+        run: go test -p 1 -coverprofile=coverage.out ./...
+
+  infra:
+    name: Infra (Helm + OpenTofu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+      - name: Helm lint
+        run: |
+          helm lint infra/helm/movies-api \
+            --set mongodb.rootPassword=ci --set rabbitmq.password=ci
+      - name: Helm template
+        run: |
+          helm template movies-api infra/helm/movies-api \
+            --set mongodb.rootPassword=ci --set rabbitmq.password=ci \
+            --set ingress.enabled=true --set apiGateway.autoscaling.enabled=true > /dev/null
+      - uses: opentofu/setup-opentofu@v2
+      - name: OpenTofu fmt
+        working-directory: infra/tofu
+        run: tofu fmt -check -recursive
+      - name: OpenTofu validate
+        working-directory: infra/tofu
+        run: |
+          tofu init -backend=false -input=false
+          tofu validate
+
+  docker:
+    name: Docker (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: [lint, test, infra]
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [api-gateway, movies-service]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      - uses: docker/setup-buildx-action@v4
+      - name: Login no GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}
+          tags: |
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.service }}/Dockerfile
+          build-contexts: hermes-agent-go=.hermes/packages/agent-go
+          # PR só builda; push na main publica no GHCR.
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}

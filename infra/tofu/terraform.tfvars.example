@@ -1,0 +1,10 @@
+# Copie para terraform.tfvars (ignorado pelo git) e ajuste.
+cluster_name      = "movies-api"
+namespace         = "movies-api"
+image_tag         = "latest"
+load_local_images = true
+ingress_enabled   = false
+
+# Para usar as imagens publicadas pelo CI no GHCR em vez das locais:
+# image_registry    = "ghcr.io/franciscohonorat"
+# load_local_images = false

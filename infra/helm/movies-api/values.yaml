@@ -1,0 +1,65 @@
+# Valores padrão pensados para um cluster local (kind) sem custo real.
+# O OpenTofu (infra/tofu) sobrescreve as senhas e as imagens.
+
+image:
+  # Registry vazio = imagens locais carregadas com `kind load docker-image`.
+  registry: ""
+  tag: latest
+  pullPolicy: IfNotPresent
+
+apiGateway:
+  enabled: true
+  replicas: 1
+  image: api-gateway
+  port: 8080
+  ginMode: release
+  resources:
+    requests: { cpu: 100m, memory: 64Mi }
+    limits: { cpu: 500m, memory: 256Mi }
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 70
+
+moviesService:
+  enabled: true
+  replicas: 1
+  image: movies-service
+  port: 50051
+  consumerWorkers: 4
+  resources:
+    requests: { cpu: 100m, memory: 64Mi }
+    limits: { cpu: 500m, memory: 256Mi }
+
+mongodb:
+  enabled: true
+  image: mongo:7
+  port: 27017
+  database: movies
+  rootUser: root
+  rootPassword: ""   # obrigatório — definido pelo OpenTofu ou --set
+  storage: 1Gi
+
+rabbitmq:
+  enabled: true
+  image: rabbitmq:3-management
+  port: 5672
+  managementPort: 15672
+  user: movies
+  password: ""       # obrigatório — definido pelo OpenTofu ou --set
+
+jaeger:
+  enabled: true
+  image: jaegertracing/all-in-one:1.65.0
+  uiPort: 16686
+  otlpGrpcPort: 4317
+
+hermes:
+  collectorUrl: ""
+  apiKey: ""
+
+ingress:
+  enabled: false
+  className: nginx
+  host: movies-api.local

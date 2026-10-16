@@ -1,0 +1,67 @@
+{{- if .Values.mongodb.enabled }}
+{{- $name := include "movies-api.name" (list . "mongodb") }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "movies-api.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+spec:
+  serviceName: {{ $name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "movies-api.selector" (list . "mongodb") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "movies-api.labels" . | nindent 8 }}
+        app.kubernetes.io/component: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: {{ .Values.mongodb.image }}
+          ports:
+            - name: mongo
+              containerPort: {{ .Values.mongodb.port }}
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef: { name: {{ include "movies-api.fullname" . }}-secrets, key: MONGO_ROOT_USER }
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: {{ include "movies-api.fullname" . }}-secrets, key: MONGO_ROOT_PASSWORD }
+            - name: MONGO_INITDB_DATABASE
+              value: {{ .Values.mongodb.database | quote }}
+          readinessProbe:
+            exec:
+              command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.mongodb.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "movies-api.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "movies-api.selector" (list . "mongodb") | nindent 4 }}
+  ports:
+    - name: mongo
+      port: {{ .Values.mongodb.port }}
+{{- end }}

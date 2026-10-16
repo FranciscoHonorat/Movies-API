@@ -1,0 +1,40 @@
+go version go1.27.2 linux/amd64
+===== movies-service =====
+	movies-service/cmd		coverage: 0.0% of statements
+ok  	movies-service/internal/adapters/grpc-server	1.019s	coverage: 95.2% of statements
+ok  	movies-service/internal/adapters/mongodb	1.086s	coverage: 57.0% of statements
+	movies-service/internal/adapters/rabbitmq		coverage: 0.0% of statements
+ok  	movies-service/internal/adapters/seed	1.055s	coverage: 78.9% of statements
+ok  	movies-service/internal/core/domain/entity	1.012s	coverage: 32.3% of statements
+?   	movies-service/internal/core/domain/err-d	[no test files]
+ok  	movies-service/internal/core/domain/valueobjects	1.016s	coverage: 55.6% of statements
+?   	movies-service/internal/core/port/input	[no test files]
+?   	movies-service/internal/core/port/output	[no test files]
+ok  	movies-service/internal/core/service	1.014s	coverage: 92.6% of statements
+	movies-service/internal/observability		coverage: 0.0% of statements
+EXIT=0
+===== api-gateway =====
+	github.com/FranciscoHonorat/movies/api-gateway/cmd		coverage: 0.0% of statements
+	github.com/FranciscoHonorat/movies/api-gateway/docs		coverage: 0.0% of statements
+	github.com/FranciscoHonorat/movies/api-gateway/internal/adapters/rabbitmq		coverage: 0.0% of statements
+2026/10/14 13:27:02 ERROR CreateMovie error error="assert.AnError general error for testing"
+--- FAIL: FuzzDeleteMovie (0.00s)
+    --- FAIL: FuzzDeleteMovie/seed#6 (0.00s)
+        movie_handler_fuzz_test.go:99: id "2147483648" enviado ao movies-service como -2147483648 (overflow de int32)
+    --- FAIL: FuzzDeleteMovie/seed#7 (0.00s)
+        movie_handler_fuzz_test.go:99: id "4294967297" enviado ao movies-service como 1 (overflow de int32)
+FAIL
+coverage: 27.4% of statements
+FAIL	github.com/FranciscoHonorat/movies/api-gateway/internal/handlers	0.022s
+	github.com/FranciscoHonorat/movies/api-gateway/internal/middleware		coverage: 0.0% of statements
+ok  	github.com/FranciscoHonorat/movies/api-gateway/internal/observability	1.032s	coverage: 25.0% of statements
+?   	github.com/FranciscoHonorat/movies/api-gateway/internal/ports/output	[no test files]
+ok  	github.com/FranciscoHonorat/movies/api-gateway/internal/resilience	1.572s	coverage: 84.4% of statements
+FAIL
+EXIT=1
+===== proto =====
+	github.com/FranciscoHonorat/movies/proto		coverage: 0.0% of statements
+EXIT=0
+===== shared =====
+	github.com/FranciscoHonorat/movies/shared		coverage: 0.0% of statements
+EXIT=0

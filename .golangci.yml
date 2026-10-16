@@ -1,0 +1,36 @@
+# Configuração básica do golangci-lint (formato v2).
+# Rodar a partir de cada módulo do go.work, ex.:
+#   cd api-gateway && golangci-lint run ./...
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: none
+  enable:
+    - errcheck     # erro retornado e ignorado
+    - govet        # checagens do `go vet`
+    - ineffassign  # atribuição que nunca é lida
+    - staticcheck  # bugs e simplificações (inclui gosimple/stylecheck)
+    - unused       # código morto
+    - misspell     # erros de grafia em inglês nos comentários/strings
+    - bodyclose    # resp.Body de HTTP não fechado
+  exclusions:
+    generated: lax
+    presets:
+      - std-error-handling
+    paths:
+      - docs/ # swagger gerado pelo swag
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

@@ -134,8 +134,8 @@ cd docs/performance/tools/ingest-load && go run . -url http://localhost:8080 -n 
 
 `api-gateway` expõe métricas Prometheus em `/metrics` (contagem e latência
 por rota, sem cardinalidade não-limitada — usa o padrão de rota do Gin,
-não a URL crua). Stack completo de Prometheus + Grafana rodando em
-Kubernetes local: ver `infra/kubernetes/monitoring/`.
+não a URL crua). No Kubernetes, o pod do api-gateway já vem anotado com
+`prometheus.io/scrape` (ver `infra/helm/movies-api`).
 
 Além disso, os dois serviços empurram métricas para o
 [Hermes](https://github.com/FranciscoHonorat/hermes-observability), uma
@@ -188,10 +188,10 @@ medidos, em [`docs/adr/0006-*.md`](docs/adr/0006-circuit-breaker-e-retry-no-api-
 
 ## Infraestrutura e deploy
 
-Kubernetes local (`kind`) e Terraform (contra LocalStack, sem custo real)
-— tudo documentado em [`infra/README.md`](infra/README.md), incluindo o
-porquê de cada desvio do template de infra original (sem EKS/RDS/ElastiCache,
-por exemplo). Deploy público ainda não existe; ver
+Kubernetes local (`kind`) com um chart Helm, provisionado por OpenTofu,
+sem custo real — documentado em [`infra/README.md`](infra/README.md). O CI
+(`.github/workflows/ci.yml`) roda golangci-lint, testes, valida o chart e o
+OpenTofu e publica as imagens no GHCR a cada push na `main`. Deploy público ainda não existe; ver
 [`docs/performance/README.md`](docs/performance/README.md#próximos-passos)
 para o estado dessa decisão.
 

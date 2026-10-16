@@ -1,0 +1,3 @@
+[t=10s] FALHA: docker stop movies-service
+[t=30s] VOLTA: docker start movies-service
+req=12000 ok=49.92% codes={'200': 5990, '500': 6010} p50=0.76ms p99=4.1ms max=66ms

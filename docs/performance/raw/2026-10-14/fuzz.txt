@@ -1,0 +1,33 @@
+===== FuzzNewMovieTitle =====
+fuzz: elapsed: 45s, execs: 1728747 (40902/sec), new interesting: 61 (total: 68)
+fuzz: elapsed: 45s, execs: 1728747 (0/sec), new interesting: 61 (total: 68)
+PASS
+ok  	movies-service/internal/core/domain/valueobjects	45.124s
+===== FuzzNewMovieYear =====
+fuzz: elapsed: 45s, execs: 1730320 (39899/sec), new interesting: 0 (total: 10)
+fuzz: elapsed: 45s, execs: 1730320 (0/sec), new interesting: 0 (total: 10)
+PASS
+ok  	movies-service/internal/core/domain/valueobjects	45.116s
+===== FuzzNewMovieID =====
+fuzz: elapsed: 45s, execs: 1613697 (34762/sec), new interesting: 1 (total: 6)
+fuzz: elapsed: 45s, execs: 1613697 (0/sec), new interesting: 1 (total: 6)
+PASS
+ok  	movies-service/internal/core/domain/valueobjects	45.096s
+===== FuzzCreateMovie =====
+fuzz: elapsed: 33s, execs: 150040 (5272/sec), new interesting: 176 (total: 184)
+fuzz: elapsed: 36s, execs: 157025 (2329/sec), new interesting: 184 (total: 192)
+fuzz: elapsed: 39s, execs: 170611 (4529/sec), new interesting: 186 (total: 194)
+fuzz: elapsed: 42s, execs: 180514 (3300/sec), new interesting: 192 (total: 200)
+fuzz: elapsed: 45s, execs: 187641 (2376/sec), new interesting: 196 (total: 204)
+fuzz: elapsed: 46s, execs: 187641 (0/sec), new interesting: 196 (total: 204)
+PASS
+ok  	github.com/FranciscoHonorat/movies/api-gateway/internal/handlers	46.156s
+===== FuzzDeleteMovie =====
+fuzz: elapsed: 0s, gathering baseline coverage: 2/8 completed
+--- FAIL: FuzzDeleteMovie (0.10s)
+    --- FAIL: FuzzDeleteMovie (0.00s)
+        movie_handler_fuzz_test.go:99: id "4294967297" enviado ao movies-service como 1 (overflow de int32)
+    
+FAIL
+exit status 1
+FAIL	github.com/FranciscoHonorat/movies/api-gateway/internal/handlers	0.106s
